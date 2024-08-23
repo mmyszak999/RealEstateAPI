@@ -1,0 +1,9 @@
+/Lib
+/Scripts
+/pyvenv.cfg
+/__pycache__
+*.pyc
+/include
+.env
+test_localsystem.txt
+/venv

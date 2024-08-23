@@ -1,0 +1,38 @@
+version: '3.9'
+
+services: 
+  db:
+    image: mysql:latest
+    container_name: db_mysql
+    env_file:
+      - .env
+    restart: always
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql:/docker-entrypoint-initdb.d
+  
+  web:
+    build:
+      context: .
+      dockerfile: ./docker/python/Dockerfile
+    container_name: backend_fastapi
+    restart: always
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes: 
+      - .:/code
+    depends_on:
+      - db
+
+  stripe-cli:
+    image: stripe/stripe-cli:latest
+    network_mode: host
+    container_name: stripe-cli
+    env_file: .env
+    command: listen --api-key ${STRIPE_SECRET_KEY} --forward-to 127.0.0.1:8000/api/stripe/webhook/ --skip-verify
+
+volumes:
+  mysql_data:
