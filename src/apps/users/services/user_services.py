@@ -16,6 +16,7 @@ from src.apps.users.schemas import (
     UserLoginInputSchema,
     UserOutputSchema,
     UserUpdateSchema,
+    UserRegisterSchema
 )
 from src.core.exceptions import (
     AccountAlreadyActivatedException,
@@ -35,33 +36,38 @@ from src.core.utils.filter import filter_and_sort_instances
 from src.core.utils.orm import if_exists
 
 
-async def create_user_base(session: AsyncSession, user_input: UserInputSchema) -> User:
+async def create_user_base(session: AsyncSession, user_input: UserRegisterSchema) -> User:
     user_data = user_input.dict()
+    if user_data.pop("password_repeat"):
+        user_data["password"] = hash_user_password(password=user_data.pop("password"))
 
-    email_check = await session.scalar(
-        select(User).filter(User.email == user_data["email"]).limit(1)
-    )
-    if email_check:
-        raise AlreadyExists(User.__name__, "email", user_data["email"])
+    if (email_check := await if_exists(User, "email", user_data.get("email"), session)):
+        raise AlreadyExists(User.__name__, "email", email_check.email)
 
     new_user = User(**user_data)
-    return new_user
 
 
 async def create_single_user(
     session: AsyncSession,
     user_input: UserInputSchema,
     background_tasks: BackgroundTasks,
-) -> UserOutputSchema:
+    with_email_activation: bool = False
+) -> UserInfoOutputSchema:
     new_user = await create_user_base(session, user_input)
+    user_schema = UserInfoOutputSchema.from_orm(new_user)
+    
+    if with_email_activation:
+        session.add(new_user)
+        await session.commit()
+        await session.refresh(new_user)
+        await send_activation_email(new_user.email, session, background_tasks)
+        return user_schema
 
+    new_user.is_active = True
     session.add(new_user)
     await session.commit()
     await session.refresh(new_user)
-
-    await send_activation_email(new_user.email, session, background_tasks)
-
-    return UserOutputSchema.from_orm(new_user)
+    return user_schema
 
 
 async def authenticate(
@@ -70,16 +76,6 @@ async def authenticate(
     login_data = user_login_schema.dict()
     user = await session.scalar(
         select(User)
-        .options(
-            load_only(
-                User.is_superuser,
-                User.email,
-                User.password,
-                User.is_active,
-                User.has_password_set,
-                User.is_staff
-            )
-        )
         .filter(User.email == login_data["email"])
         .limit(1)
     )
@@ -87,8 +83,6 @@ async def authenticate(
         raise AuthenticationException("Invalid Credentials")
     if not user.is_active:
         raise AccountNotActivatedException("email", login_data["email"])
-    if not user.has_password_set:
-        raise PasswordNotSetException
 
     return user
 
@@ -121,7 +115,8 @@ async def get_all_users(
     only_active: bool = True,
     query_params: list[tuple] = None,
 ) -> Union[
-    PagedResponseSchema[UserInfoOutputSchema], PagedResponseSchema[UserOutputSchema]
+    PagedResponseSchema[UserInfoOutputSchema],
+    PagedResponseSchema[UserOutputSchema]
 ]:
     query = select(User)
     if only_active:
@@ -141,7 +136,7 @@ async def get_all_users(
 
 async def update_single_user(
     session: AsyncSession, user_input: UserUpdateSchema, user_id: str
-) -> UserOutputSchema:
+) -> UserInfoOutputSchema:
     if not (await if_exists(User, "id", user_id, session)):
         raise DoesNotExist(User.__name__, "id", user_id)
 
@@ -153,7 +148,9 @@ async def update_single_user(
         await session.execute(statement)
         await session.commit()
 
-    return await get_single_user(session, user_id=user_id)
+    return await get_single_user(
+        session, user_id=user_id, output_schema=UserInfoOutputSchema
+    )
 
 
 async def delete_single_user(session: AsyncSession, user_id: str):

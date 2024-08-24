@@ -7,17 +7,13 @@ from fastapi_jwt_auth import AuthJWT
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.apps.jwt.schemas import AccessTokenOutputSchema
-from src.apps.stocks.schemas.user_stock_schemas import UserStockOutputSchema
-from src.apps.stocks.services.user_stock_services import (
-    get_all_user_stocks_with_single_user_involvement,
-)
 from src.apps.users.models import User
 from src.apps.users.schemas import (
     UserInfoOutputSchema,
-    UserInputSchema,
     UserLoginInputSchema,
     UserOutputSchema,
     UserUpdateSchema,
+    UserRegisterSchema
 )
 from src.apps.users.services.activation_services import (
     activate_single_user,
@@ -40,16 +36,31 @@ user_router = APIRouter(prefix="/users", tags=["users"])
 
 
 @user_router.post(
-    "/create", response_model=UserOutputSchema, status_code=status.HTTP_201_CREATED
+    "/create", response_model=UserInfoOutputSchema, status_code=status.HTTP_201_CREATED
 )
 async def create_user(
-    user: UserInputSchema,
+    user_input: UserRegisterSchema,
     background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
-) -> UserOutputSchema:
-    await check_if_staff(request_user)
-    return await create_single_user(session, user, background_tasks)
+) -> UserInfoOutputSchema:
+    return await create_single_user(session, user_input, background_tasks)
+
+
+@user_router.post(
+    "/create-with-email-activation",
+    response_model=UserInfoOutputSchema,
+    status_code=status.HTTP_201_CREATED
+)
+async def create_user(
+    user_input: UserRegisterSchema,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(get_db),
+    request_user: User = Depends(authenticate_user),
+) -> UserInfoOutputSchema:
+    return await create_single_user(
+        session, user_input, background_tasks, with_email_activation=True
+        )
 
 
 @user_router.post(
@@ -77,10 +88,7 @@ async def get_logged_user(
 
 @user_router.get(
     "/",
-    response_model=Union[
-        PagedResponseSchema[UserOutputSchema],
-        PagedResponseSchema[UserInfoOutputSchema],
-    ],
+    response_model=PagedResponseSchema[UserInfoOutputSchema],
     status_code=status.HTTP_200_OK,
 )
 async def get_users(
@@ -88,19 +96,12 @@ async def get_users(
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
     request_user: User = Depends(authenticate_user),
-) -> Union[
-    PagedResponseSchema[UserOutputSchema],
-    PagedResponseSchema[UserInfoOutputSchema],
-]:
-    if request_user.is_staff:
-        return await get_all_users(
-            session, page_params, query_params=request.query_params.multi_items()
-        )
+) -> PagedResponseSchema[UserInfoOutputSchema]:
+    await check_if_staff(request_user)
     return await get_all_users(
-        session,
-        page_params,
+        session, page_params, 
         output_schema=UserInfoOutputSchema,
-        query_params=request.query_params.multi_items(),
+        query_params=request.query_params.multi_items()
     )
 
 
@@ -132,37 +133,14 @@ async def get_user(
     user_id: str,
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
-) -> Union[UserInfoOutputSchema, UserOutputSchema]:
-    if request_user.is_staff:
-        return await get_single_user(session, user_id)
-    return await get_single_user(session, user_id, output_schema=UserInfoOutputSchema)
-
-
-@user_router.get(
-    "/{user_id}/history",
-    status_code=status.HTTP_200_OK,
-    response_model=PagedResponseSchema[UserStockOutputSchema],
-)
-async def get_user_stocks_involvement_history(
-    request: Request,
-    user_id: str,
-    session: AsyncSession = Depends(get_db),
-    page_params: PageParams = Depends(),
-    request_user: User = Depends(authenticate_user),
-) -> PagedResponseSchema[UserStockOutputSchema]:
-    user = await get_single_user(session, user_id)
-    await check_if_staff_or_owner(request_user, "id", user.id)
-    return await get_all_user_stocks_with_single_user_involvement(
-        session,
-        page_params,
-        user_id=user_id,
-        query_params=request.query_params.multi_items(),
-    )
+) -> UserOutputSchema:
+    await check_if_staff(request_user)
+    return await get_single_user(session, user_id)
 
 
 @user_router.patch(
     "/{user_id}",
-    response_model=UserOutputSchema,
+    response_model=UserInfoOutputSchema,
     status_code=status.HTTP_200_OK,
 )
 async def update_user(
@@ -170,9 +148,9 @@ async def update_user(
     user_input: UserUpdateSchema,
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
-) -> UserOutputSchema:
-    await check_if_staff(request_user)
-    return await update_single_user(session, user_input, user_id)
+) -> UserInfoOutputSchema:
+    if (await check_if_staff_or_owner(request_user, "id", user_id)):
+        return await update_single_user(session, user_input, user_id)
 
 
 @user_router.patch(
@@ -191,7 +169,6 @@ async def deactivate_user(
         status_code=status.HTTP_200_OK,
         content={"message": "The account has been deactivated!"},
     )
-
 
 @user_router.patch(
     "/{user_id}/activate",
