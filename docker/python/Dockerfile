@@ -8,7 +8,8 @@ ENV PYTHONUNBUFFERED 1
 RUN apt-get update \
     && apt-get -y install libpq-dev gcc \
     && apt-get install -yq netcat \
-    && pip install mysql-connector-python
+    && pip install asyncmy \
+    && pip install PyMySQL
 
 COPY requirements.txt .
 
