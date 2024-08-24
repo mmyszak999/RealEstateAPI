@@ -41,8 +41,7 @@ user_router = APIRouter(prefix="/users", tags=["users"])
 async def create_user(
     user_input: UserRegisterSchema,
     background_tasks: BackgroundTasks,
-    session: AsyncSession = Depends(get_db),
-    request_user: User = Depends(authenticate_user),
+    session: AsyncSession = Depends(get_db)
 ) -> UserInfoOutputSchema:
     return await create_single_user(session, user_input, background_tasks)
 
@@ -55,8 +54,7 @@ async def create_user(
 async def create_user(
     user_input: UserRegisterSchema,
     background_tasks: BackgroundTasks,
-    session: AsyncSession = Depends(get_db),
-    request_user: User = Depends(authenticate_user),
+    session: AsyncSession = Depends(get_db)
 ) -> UserInfoOutputSchema:
     return await create_single_user(
         session, user_input, background_tasks, with_email_activation=True

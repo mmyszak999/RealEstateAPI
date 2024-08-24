@@ -1,21 +1,14 @@
 from fastapi import BackgroundTasks
 from fastapi_mail import ConnectionConfig
 from pydantic import BaseSettings, EmailStr
-from sqlalchemy import update
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.apps.emails.schemas import EmailSchema, EmailUpdateSchema
+from src.apps.emails.schemas import EmailSchema
 from src.apps.jwt.schemas import ConfirmationTokenSchema
-from src.apps.payments.schemas import PaymentAwaitSchema, PaymentConfirmationSchema
-from src.apps.user.models import User
+from src.apps.users.models import User
 from src.core.exceptions import DoesNotExist, IsOccupied, ServiceException
-from src.core.utils.utils import (
-    check_field_values,
-    confirm_token,
-    generate_confirm_token,
-    if_exists,
-    send_email,
-)
+from src.core.utils.email import confirm_token, generate_confirm_token, send_email
+from src.core.utils.orm import if_exists
 from src.settings.email_settings import EmailSettings
 
 
@@ -29,21 +22,21 @@ async def retrieve_email_from_token(session: AsyncSession, token: str) -> str:
     return current_email
 
 
-def send_activation_email(
-    email: EmailStr, session: Session, background_tasks: BackgroundTasks
+async def send_activation_email(
+    email: EmailStr, session: AsyncSession, background_tasks: BackgroundTasks
 ) -> None:
     email_schema = EmailSchema(
         email_subject="Activate your account",
         receivers=(email,),
         template_name="account_activation_email.html",
     )
-    token = generate_confirm_token([email])
+    token = await generate_confirm_token([email])
     body_schema = ConfirmationTokenSchema(token=token)
-    send_email(email_schema, body_schema, background_tasks, settings=email_config())
+    await send_email(email_schema, body_schema, background_tasks, settings=email_config())
 
 
-def send_awaiting_for_payment_mail(
-    email: EmailStr, session: Session,
+async def send_awaiting_for_payment_mail(
+    email: EmailStr, session: AsyncSession,
     background_tasks: BackgroundTasks, order_id: str
 ) -> None:
     email_schema = EmailSchema(
@@ -52,11 +45,11 @@ def send_awaiting_for_payment_mail(
         template_name="awaiting_for_payment.html",
     )
     body_schema = PaymentAwaitSchema(order_id=order_id)
-    send_email(email_schema, body_schema, background_tasks, settings=email_config())
+    await send_email(email_schema, body_schema, background_tasks, settings=email_config())
 
 
-def send_payment_confirmaion_mail(
-    email: EmailStr, session: Session,
+async def send_payment_confirmaion_mail(
+    email: EmailStr, session: AsyncSession,
     background_tasks: BackgroundTasks, order_id: str
 ) -> None:
     email_schema = EmailSchema(
@@ -65,4 +58,4 @@ def send_payment_confirmaion_mail(
         template_name="payment_confirmation.html",
     )
     body_schema = PaymentConfirmationSchema(order_id=order_id)
-    send_email(email_schema, body_schema, background_tasks, settings=email_config())
+    await send_email(email_schema, body_schema, background_tasks, settings=email_config())

@@ -1,4 +1,5 @@
-db-user = mysql_admin
+db-user = mysql_user
+db-root = root
 location = tests
 
 build:
@@ -29,5 +30,8 @@ db-bash:
 db-shell:
 	docker-compose exec db mysql -u $(db-user) -p
 
-create-superuser:
+db-root-shell:
+	docker-compose exec db mysql -u $(db-root) -p
+
+superuser:
 	docker-compose exec web bash -c "bash ./app_scripts/create_superuser.sh main_db"

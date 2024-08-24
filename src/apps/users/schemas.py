@@ -33,8 +33,8 @@ class UserInputSchema(UserBaseSchema):
 
 
 class UserPasswordSchema(BaseModel):
-    password: str = Field(min_length=8, max_length=40)
-    password_repeat: str = Field(min_length=8, max_length=40)
+    password: str = Field(min_length=8, max_length=60)
+    password_repeat: str = Field(min_length=8, max_length=60)
 
     @validator("password_repeat")
     def validate_passwords(cls, rep_password: str, values: dict[str, Any]) -> str:
@@ -71,6 +71,8 @@ class UserUpdateSchema(BaseModel):
 
 class UserInfoOutputSchema(UserBaseSchema):
     id: str
+    email: EmailStr
+    birth_date: datetime.date
     is_active: bool
 
     class Config:

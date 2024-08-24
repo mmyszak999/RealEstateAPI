@@ -7,43 +7,59 @@ set -o nounset
 create_superuser() {
 python << END
 import sys
+import asyncio
 import uuid
 
-import psycopg2
-try:
-    connection = psycopg2.connect(
-        dbname="${TEST_POSTGRES_DB}" if "$1" == "test_db" else "${POSTGRES_DB}",
-        user="${POSTGRES_USER}",
-        password="${POSTGRES_PASSWORD}",
-        host="${POSTGRES_HOST}",
-        port="${POSTGRES_PORT}",
-    )
-    user_id = uuid.uuid4()
-    cursor = connection.cursor()
-    user_insert_query = f"""INSERT INTO "user"
-    (ID, FIRST_NAME, LAST_NAME, EMAIL, USERNAME, PASSWORD, BIRTH_DATE, IS_SUPERUSER, IS_STAFF, IS_ACTIVE)
-    VALUES ('{user_id}', '${SUPERUSER_FIRST_NAME}', '${SUPERUSER_LAST_NAME}', '${SUPERUSER_EMAIL}',
-    '${SUPERUSER_USERNAME}', '${SUPERUSER_PASSWORD}', '${SUPERUSER_BIRTHDATE}', TRUE, TRUE, TRUE)
-    """
-    cursor.execute(user_insert_query)
+import asyncmy
+from passlib.context import CryptContext
 
+passwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-    address_insert_query = f"""INSERT INTO "user_address"
-    (ID, COUNTRY, STATE, CITY, POSTAL_CODE, STREET, HOUSE_NUMBER, APARTMENT_NUMBER, USER_ID)
-    VALUES ('{uuid.uuid4()}', 'USA', 'Texas', 'Houston',
-    '34567', 'Walker Avenue', '35', '2', '{user_id}')
-    """
-    cursor.execute(address_insert_query)
-    connection.commit()
-    print("successfully created superuser")
-    
-    connection.close()
+async def run():
+    try:
+        # Connect to the MySQL database
+        connection = await asyncmy.connect(
+            database="${TEST_MYSQL_DB}" if "$1" == "test_db" else "${MYSQL_DB}",
+            user="${MYSQL_ROOT_USER}",
+            password="${MYSQL_ROOT_PASSWORD}",
+            host="${MYSQL_HOST}",
+            port=${MYSQL_PORT}
+        )
 
+        user_id = uuid.uuid4().hex
+        unhashed_password = '${SUPERUSER_PASSWORD}'
+        hashed_password = passwd_context.hash(unhashed_password)
 
-except (psycopg2.OperationalError, psycopg2.errors.UniqueViolation):
-    print("Couldn't create a superuser. Check if the superuser account is already created.")
-    sys.exit(-1)
-sys.exit(0)
+        user_insert_query = f"""
+        INSERT INTO user
+            (id, first_name, last_name, email, password, birth_date,
+            is_superuser, is_staff, is_active, phone_number)
+        VALUES (
+            '{user_id}',
+            '${SUPERUSER_FIRST_NAME}',
+            '${SUPERUSER_LAST_NAME}',
+            '${SUPERUSER_EMAIL}',
+            '{hashed_password}',
+            '${SUPERUSER_BIRTHDATE}',
+            TRUE,
+            TRUE,
+            TRUE,
+            '${SUPERUSER_PHONE_NUMBER}'
+        )
+        """
+        async with connection.cursor() as cursor:
+            await cursor.execute(user_insert_query)
+            await connection.commit()
+
+        print("Successfully created superuser")
+
+    except asyncmy.errors.IntegrityError as e:
+        print("Couldn't create a superuser. Check if the superuser account is already created.")
+        sys.exit(-1)
+    finally:
+        await connection.close()
+
+asyncio.run(run())
 
 END
 }

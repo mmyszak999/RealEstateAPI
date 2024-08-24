@@ -39,12 +39,13 @@ from src.core.utils.orm import if_exists
 async def create_user_base(session: AsyncSession, user_input: UserRegisterSchema) -> User:
     user_data = user_input.dict()
     if user_data.pop("password_repeat"):
-        user_data["password"] = hash_user_password(password=user_data.pop("password"))
+        user_data["password"] = await hash_user_password(password=user_data.pop("password"))
 
     if (email_check := await if_exists(User, "email", user_data.get("email"), session)):
         raise AlreadyExists(User.__name__, "email", email_check.email)
 
     new_user = User(**user_data)
+    return new_user
 
 
 async def create_single_user(
@@ -54,20 +55,19 @@ async def create_single_user(
     with_email_activation: bool = False
 ) -> UserInfoOutputSchema:
     new_user = await create_user_base(session, user_input)
-    user_schema = UserInfoOutputSchema.from_orm(new_user)
     
     if with_email_activation:
         session.add(new_user)
         await session.commit()
         await session.refresh(new_user)
         await send_activation_email(new_user.email, session, background_tasks)
-        return user_schema
+        return UserInfoOutputSchema.from_orm(new_user)
 
     new_user.is_active = True
     session.add(new_user)
     await session.commit()
     await session.refresh(new_user)
-    return user_schema
+    return UserInfoOutputSchema.from_orm(new_user)
 
 
 async def authenticate(
