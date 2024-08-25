@@ -25,7 +25,6 @@ from src.core.exceptions import (
     AlreadyExists,
     AuthenticationException,
     DoesNotExist,
-    PasswordNotSetException,
     ServiceException,
 )
 from src.core.pagination.models import PageParams

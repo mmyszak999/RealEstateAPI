@@ -20,10 +20,9 @@ from src.core.exceptions import (
     AlreadyExists,
     AuthenticationException,
     DoesNotExist,
-    PasswordNotSetException,
 )
 from src.core.factory.user_factory import (
-    UserInputSchemaFactory,
+    UserRegisterSchemaFactory,
     UserUpdateSchemaFactory,
 )
 from src.core.pagination.models import PageParams
@@ -31,7 +30,6 @@ from src.core.utils.orm import if_exists
 from src.core.utils.utils import generate_uuid
 from tests.test_users.conftest import (
     DB_USER_SCHEMA,
-    PASSWORD_SCHEMA,
     auth_headers,
     db_staff_user,
     db_user,
@@ -43,7 +41,7 @@ from tests.test_users.conftest import (
 async def test_raise_exception_when_creating_user_with_occupied_email(
     async_session: AsyncSession, db_user: UserOutputSchema
 ):
-    user_schema = UserInputSchemaFactory().generate(email=DB_USER_SCHEMA.email)
+    user_schema = UserRegisterSchemaFactory().generate(email=DB_USER_SCHEMA.email)
     with pytest.raises(AlreadyExists):
         await create_user_base(async_session, user_schema)
 
@@ -66,21 +64,6 @@ async def test_raise_exception_when_inactive_user_tries_to_sign_in(
     await deactivate_single_user(async_session, db_user.id, db_staff_user.id)
     login_schema = UserLoginInputSchema(email=db_user.email, password="password")
     with pytest.raises(AccountNotActivatedException):
-        await authenticate(login_schema, async_session)
-
-
-@pytest.mark.asyncio
-async def test_raise_exception_when_user_without_set_password_tries_to_sign_in(
-    async_session: AsyncSession, db_user: UserOutputSchema
-):
-    db_user_object = await if_exists(User, "id", db_user.id, async_session)
-    db_user_object.has_password_set = False
-    async_session.add(db_user_object)
-    await async_session.commit()
-    await async_session.refresh(db_user_object)
-
-    login_schema = UserLoginInputSchema(email=db_user.email, password="password")
-    with pytest.raises(PasswordNotSetException):
         await authenticate(login_schema, async_session)
 
 
