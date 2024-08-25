@@ -2,7 +2,7 @@ import random
 from decimal import Decimal
 
 from faker import Faker
-from faker.providers import address, date_time, internet, lorem, misc, person
+from faker.providers import address, date_time, internet, lorem, misc, person, phone_number
 from faker_commerce import Provider as commerce_provider
 
 
@@ -16,6 +16,7 @@ def initialize_faker():
     faker.add_provider(commerce_provider)
     faker.add_provider(address)
     faker.add_provider(lorem)
+    faker.add_provider(phone_number)
 
     return faker
 
