@@ -28,3 +28,4 @@ class User(Base):
     is_staff = Column(Boolean, nullable=False, default=False)
     phone_number = Column(String(length=50), nullable=False)
     created_at = Column(DateTime, default=dt.datetime.now, nullable=True)
+    properties = relationship("Property", back_populates="owner", lazy="selectin")
