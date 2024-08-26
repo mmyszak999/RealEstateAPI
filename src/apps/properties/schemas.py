@@ -6,7 +6,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, EmailStr, Field, validator
 
 from src.apps.properties.enums import PropertyTypeEnum, PropertyStatusEnum
-from src.apps.users.schemas import UserInfoOutputSchema
+from src.apps.users.schemas import UserInfoOutputSchema, UserIdSchema
 
 
 class PropertyBaseSchema(BaseModel):
@@ -31,7 +31,6 @@ class PropertyInputSchema(PropertyBaseSchema):
 
 
 class PropertyUpdateSchema(BaseModel):
-    owner_id: Optional[str]
     property_type: Optional[str]
     short_description: Optional[str]
     description: Optional[str]
@@ -60,3 +59,7 @@ class PropertyOutputSchema(PropertyBasicOutputSchema):
 
     class Config:
         orm_mode = True
+
+
+class PropertyOwnerIdSchema(UserIdSchema):
+    pass

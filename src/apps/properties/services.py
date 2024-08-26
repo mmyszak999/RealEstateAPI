@@ -6,7 +6,8 @@ from src.apps.properties.schemas import (
     PropertyInputSchema,
     PropertyOutputSchema,
     PropertyUpdateSchema,
-    PropertyBasicOutputSchema
+    PropertyBasicOutputSchema,
+    PropertyOwnerIdSchema
 )
 from src.apps.users.models import User
 from src.apps.properties.enums import PropertyStatusEnum, PropertyTypeEnum
@@ -15,7 +16,8 @@ from src.core.exceptions import (
     DoesNotExist,
     IsOccupied, 
     OwnerAlreadyHasTheOwnershipException,
-    IncorrectEnumValueException
+    IncorrectEnumValueException,
+    ServiceException
 )
 from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
@@ -95,17 +97,6 @@ async def update_single_property(
         raise DoesNotExist(Property.__name__, "id", property_id)
 
     property_data = property_input.dict(exclude_unset=True, exclude_none=True)
-    
-    owner_id = property_data.get("owner_id")
-
-    if owner_id:
-        owner_object = await if_exists(User, "id", owner_id, session)
-        if not owner_object:
-            raise DoesNotExist(User.__name__, "id", owner_id)
-        
-        if property_object.owner_id == owner_object.id:
-            raise OwnerAlreadyHasTheOwnershipException
-    
 
     property_status = property_data.get('property_status', "")
     
@@ -133,10 +124,29 @@ async def update_single_property(
     return await get_single_property(session, property_id=property_id)
 
 
-async def delete_single_property(session: AsyncSession):
-    
-    statement = delete(Property)
-    result = await session.execute(statement)
-    await session.commit()
+async def change_property_owner(
+    session: AsyncSession, property_input: PropertyOwnerIdSchema, property_id: int
+) -> None:
+    if not (property_object := await if_exists(Property, "id", property_id, session)):
+        raise DoesNotExist(Property.__name__, "id", property_id)
 
-    return result
+    property_data = property_input.dict()
+    
+    owner_id = property_data.get("id", "")
+
+    if owner_id:
+        owner_object = await if_exists(User, "id", owner_id, session)
+        if not owner_object:
+            raise DoesNotExist(User.__name__, "id", owner_id)
+        
+        if not owner_object.is_active:
+            raise ServiceException("Inactive user cannot be the property owner! ")
+        
+        if property_object.owner_id == owner_object.id:
+            raise OwnerAlreadyHasTheOwnershipException
+    
+    property_object.owner_id = owner_id
+    session.add(property_object)
+    await session.commit()
+    await session.refresh(property_object)
+    return

@@ -1,19 +1,22 @@
 from fastapi import Depends, Request, Response, status
 from fastapi.routing import APIRouter
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.apps.properties.schemas import (
     PropertyInputSchema,
     PropertyOutputSchema,
     PropertyUpdateSchema,
-    PropertyBasicOutputSchema
+    PropertyBasicOutputSchema,
+    PropertyOwnerIdSchema
 )
 from src.apps.properties.services import (
     create_property,
     get_all_properties,
     get_single_property,
     update_single_property,
-    delete_single_property
+    delete_single_property,
+    change_property_owner
 )
 from src.apps.users.models import User
 from src.core.pagination.models import PageParams
@@ -116,14 +119,20 @@ async def update_property(
     await check_if_staff_or_owner(request_user, "id", property.owner_id)
     return await update_single_property(session, property_input, property_id)
 
-@property_router.delete(
-    "/",
-    status_code=status.HTTP_204_NO_CONTENT,
+
+@property_router.patch(
+    "/{property_id}/change-owner",
+    status_code=status.HTTP_200_OK,
 )
-async def delete_property(
+async def change_single_property_owner(
+    property_id: str,
+    property_schema: PropertyOwnerIdSchema,
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
-) -> Response:
+) -> PropertyOutputSchema:
     await check_if_staff(request_user)
-    await delete_single_property(session)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    await change_property_owner(session, property_schema, property_id)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"message": "The property ownership has been changed! "},
+    )
