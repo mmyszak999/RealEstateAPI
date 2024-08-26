@@ -1,12 +1,17 @@
+from enum import Enum
 import datetime
 from decimal import Decimal
 from typing import Any, Optional
 
 from pydantic import BaseModel, EmailStr, Field, validator
 
+from src.apps.properties.enums import PropertyTypeEnum, PropertyStatusEnum
+from src.apps.users.schemas import UserInfoOutputSchema
+
 
 class PropertyBaseSchema(BaseModel):
-    property_type: str = Field(max_length=50)
+    property_type: PropertyTypeEnum
+    property_status: PropertyStatusEnum
     short_description: str = Field(max_length=100)
     square_meter: Decimal
     rooms_amount: Optional[int]
@@ -17,6 +22,7 @@ class PropertyBaseSchema(BaseModel):
 
 
 class PropertyInputSchema(PropertyBaseSchema):
+    owner_id: Optional[str]
     description: Optional[str] = Field(max_length=500)
     property_value: Decimal
     
@@ -25,6 +31,7 @@ class PropertyInputSchema(PropertyBaseSchema):
 
 
 class PropertyUpdateSchema(BaseModel):
+    owner_id: Optional[str]
     property_type: Optional[str]
     short_description: Optional[str]
     description: Optional[str]
@@ -37,15 +44,16 @@ class PropertyUpdateSchema(BaseModel):
         orm_mode = True
 
 
-class PropertyInfoOutputSchema(PropertyBaseSchema):
-    pass
+class PropertyBasicOutputSchema(PropertyBaseSchema):
+    id: str
 
     class Config:
         orm_mode = True
 
 
-class PropertyOutputSchema(PropertyInfoOutputSchema):
-    id: str
+class PropertyOutputSchema(PropertyBasicOutputSchema):
+    owner_id: Optional[str]
+    owner: Optional[UserInfoOutputSchema]
     description: Optional[str]
     property_value: Decimal
     created_at: Optional[datetime.datetime]

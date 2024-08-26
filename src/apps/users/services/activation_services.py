@@ -23,7 +23,6 @@ from src.core.exceptions import (
     AccountNotActivatedException,
     AuthenticationException,
     DoesNotExist,
-    PasswordAlreadySetException,
     ServiceException,
     UserCantActivateTheirAccountException,
     UserCantDeactivateTheirAccountException,
