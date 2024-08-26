@@ -88,3 +88,7 @@ class UserOutputSchema(UserInputSchema):
 
     class Config:
         orm_mode = True
+
+
+class UserIdSchema(BaseModel):
+    id: str
