@@ -15,7 +15,6 @@ from src.apps.properties.services import (
     get_all_properties,
     get_single_property,
     update_single_property,
-    delete_single_property,
     change_property_owner
 )
 from src.apps.users.models import User
@@ -44,7 +43,7 @@ async def post_property(
 
 @property_router.get(
     "/all",
-    response_model=PagedResponseSchema[PropertyOutputSchema],
+    response_model=PagedResponseSchema[PropertyBasicOutputSchema],
     status_code=status.HTTP_200_OK,
 )
 async def get_every_property(
@@ -52,7 +51,8 @@ async def get_every_property(
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
     request_user: User = Depends(authenticate_user),
-) -> PagedResponseSchema[PropertyOutputSchema]:
+) -> PagedResponseSchema[PropertyBasicOutputSchema]:
+    await check_if_staff(request_user)
     return await get_all_properties(
         session, page_params, query_params=request.query_params.multi_items(),
     )
@@ -84,6 +84,7 @@ async def get_rented_properties(
     page_params: PageParams = Depends(),
     request_user: User = Depends(authenticate_user),
 ) -> PagedResponseSchema[PropertyBasicOutputSchema]:
+    await check_if_staff(request_user)
     return await get_all_properties(
         session, page_params, get_rented=True,
         query_params=request.query_params.multi_items(),
@@ -100,8 +101,9 @@ async def get_property(
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
 ) -> PropertyOutputSchema:
-    await check_if_staff(request_user)
-    return await get_single_property(session, property_id)
+    property = await get_single_property(session, property_id)
+    await check_if_staff_or_owner(request_user, "id", property.owner_id)
+    return property
 
 
 @property_router.patch(
