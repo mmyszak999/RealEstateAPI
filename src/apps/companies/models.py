@@ -18,8 +18,8 @@ class Company(Base):
         index=True,
         default=generate_uuid,
     )
-    company_name = Column(String(length=100), nullable=False)
+    company_name = Column(String(length=100), nullable=False, unique=True)
     foundation_year = Column(Integer, nullable=False)
     phone_number = Column(String(length=50), nullable=False)
-    users = relationship("User", back_populates="company", lazy="selectin")
+    users = relationship("User", back_populates="company", lazy="joined")
     

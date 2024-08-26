@@ -34,4 +34,4 @@ class User(Base):
         ForeignKey("company.id", ondelete="SET NULL", onupdate="cascade"),
         nullable=True,
     )
-    company = relationship("Company", back_populates="users", lazy="selectin")
+    company = relationship("Company", back_populates="users", lazy="joined")

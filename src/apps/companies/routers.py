@@ -1,0 +1,92 @@
+from typing import Union
+
+from fastapi import Depends, Request, Response, status
+from fastapi.routing import APIRouter
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.apps.companies.schemas import (
+    CompanyInputSchema,
+    CompanyOutputSchema,
+    CompanyUpdateSchema,
+    CompanyBasicOutputSchema
+)
+from src.apps.companies.services import (
+    create_company,
+    get_all_companies,
+    get_single_company,
+    update_single_company,
+)
+from src.apps.users.models import User
+from src.core.pagination.models import PageParams
+from src.core.pagination.schemas import PagedResponseSchema
+from src.core.permissions import check_if_staff
+from src.dependencies.get_db import get_db
+from src.dependencies.user import authenticate_user
+
+company_router = APIRouter(prefix="/companies", tags=["company"])
+
+
+@company_router.post(
+    "/",
+    response_model=CompanyBasicOutputSchema,
+    status_code=status.HTTP_201_CREATED,
+)
+async def post_company(
+    company: CompanyInputSchema,
+    session: AsyncSession = Depends(get_db),
+    request_user: User = Depends(authenticate_user),
+) -> CompanyBasicOutputSchema:
+    await check_if_staff(request_user)
+    return await create_company(session, company)
+
+
+@company_router.get(
+    "/",
+    response_model=PagedResponseSchema[CompanyBasicOutputSchema],
+    status_code=status.HTTP_200_OK,
+)
+async def get_companies(
+    request: Request,
+    session: AsyncSession = Depends(get_db),
+    page_params: PageParams = Depends(),
+    request_user: User = Depends(authenticate_user),
+) -> PagedResponseSchema[CompanyBasicOutputSchema]:
+    return await get_all_companies(
+        session, page_params, query_params=request.query_params.multi_items()
+    )
+
+
+@company_router.get(
+    "/{company_id}",
+    response_model=Union[
+        CompanyOutputSchema,
+        CompanyBasicOutputSchema
+        ],
+    status_code=status.HTTP_200_OK,
+)
+async def get_company(
+    company_id: str,
+    session: AsyncSession = Depends(get_db),
+    request_user: User = Depends(authenticate_user),
+) -> Union[
+        CompanyOutputSchema,
+        CompanyBasicOutputSchema
+        ]:
+    if request_user.is_staff:
+        return await get_single_company(session, company_id)
+    return await get_single_company(session, company_id, output_schema=CompanyBasicOutputSchema)
+
+
+@company_router.patch(
+    "/{company_id}",
+    response_model=CompanyOutputSchema,
+    status_code=status.HTTP_200_OK,
+)
+async def update_company(
+    company_id: str,
+    company_input: CompanyUpdateSchema,
+    session: AsyncSession = Depends(get_db),
+    request_user: User = Depends(authenticate_user),
+) -> CompanyOutputSchema:
+    await check_if_staff(request_user)
+    return await update_single_company(session, company_input, company_id)

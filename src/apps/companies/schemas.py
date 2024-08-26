@@ -26,21 +26,19 @@ class CompanyUpdateSchema(BaseModel):
     foundation_year: Optional[int] = Field(ge=0)
     phone_number: Optional[str]
 
-
     class Config:
         orm_mode = True
 
 
-class CompanyInfoOutputSchema(CompanyBaseSchema):
+class CompanyBasicOutputSchema(CompanyInputSchema):
     id: str
     
-
     class Config:
         orm_mode = True
 
 
-class CompanyOutputSchema(CompanyInfoOutputSchema):
-    users: Optional[list[UserInfoOutputSchema]]
+class CompanyOutputSchema(CompanyBasicOutputSchema):
+    users: Optional[list[UserInfoOutputSchema]] = []
 
     class Config:
         orm_mode = True
@@ -48,3 +46,6 @@ class CompanyOutputSchema(CompanyInfoOutputSchema):
 
 class CompanyIdSchema(BaseModel):
     id: str
+    
+    class Config:
+        orm_mode = True

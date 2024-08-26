@@ -7,6 +7,7 @@ from src.apps.emails.routers import email_router
 from src.apps.users.routers import user_router
 from src.apps.jwt.routers import jwt_router
 from src.apps.properties.routers import property_router
+from src.apps.companies.routers import company_router
 from src.core.exceptions import (
     AccountAlreadyActivatedException,
     AccountAlreadyDeactivatedException,
@@ -37,6 +38,7 @@ root_router.include_router(user_router)
 root_router.include_router(email_router)
 root_router.include_router(jwt_router)
 root_router.include_router(property_router)
+root_router.include_router(company_router)
 
 app.include_router(root_router)
 
