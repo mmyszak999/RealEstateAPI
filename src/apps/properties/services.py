@@ -1,5 +1,8 @@
+from typing import Union
+
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel
 
 from src.apps.properties.models import Property
 from src.apps.properties.schemas import (
@@ -56,12 +59,15 @@ async def create_property(
 
 
 async def get_single_property(
-    session: AsyncSession, property_id: int
-) -> PropertyOutputSchema:
+    session: AsyncSession, property_id: int, output_schema: BaseModel = PropertyOutputSchema
+) -> Union[
+        PropertyOutputSchema,
+        PropertyBasicOutputSchema
+        ]:
     if not (property_object := await if_exists(Property, "id", property_id, session)):
         raise DoesNotExist(Property.__name__, "id", property_id)
 
-    return PropertyOutputSchema.from_orm(property_object)
+    return output_schema.from_orm(property_object)
 
 
 async def get_all_properties(

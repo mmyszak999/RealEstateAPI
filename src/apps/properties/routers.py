@@ -1,3 +1,5 @@
+from typing import Union
+
 from fastapi import Depends, Request, Response, status
 from fastapi.routing import APIRouter
 from fastapi.responses import JSONResponse
@@ -93,17 +95,24 @@ async def get_rented_properties(
 
 @property_router.get(
     "/{property_id}",
-    response_model=PropertyOutputSchema,
+    response_model=Union[
+        PropertyOutputSchema,
+        PropertyBasicOutputSchema
+        ],
     status_code=status.HTTP_200_OK,
 )
 async def get_property(
     property_id: str,
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
-) -> PropertyOutputSchema:
+) -> Union[
+        PropertyOutputSchema,
+        PropertyBasicOutputSchema
+        ]:
     property = await get_single_property(session, property_id)
-    await check_if_staff_or_owner(request_user, "id", property.owner_id)
-    return property
+    if request_user.is_staff or getattr(request_user, "id") == property.owner_id:
+        return property
+    return await get_single_property(session, property_id, output_schema=PropertyBasicOutputSchema)
 
 
 @property_router.patch(
