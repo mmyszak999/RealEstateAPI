@@ -8,6 +8,7 @@ from src.apps.users.routers import user_router
 from src.apps.jwt.routers import jwt_router
 from src.apps.properties.routers import property_router
 from src.apps.companies.routers import company_router
+from src.apps.addresses.routers import address_router
 from src.core.exceptions import (
     AccountAlreadyActivatedException,
     AccountAlreadyDeactivatedException,
@@ -25,7 +26,9 @@ from src.core.exceptions import (
     UnavailableSortFieldException,
     OwnerAlreadyHasTheOwnershipException,
     IncorrectEnumValueException,
-    UserAlreadyHasCompanyException
+    UserAlreadyHasCompanyException,
+    IncorrectCompanyOrPropertyValueException,
+    UserHasNoCompanyException
 )
 
 app = FastAPI(
@@ -40,6 +43,7 @@ root_router.include_router(email_router)
 root_router.include_router(jwt_router)
 root_router.include_router(property_router)
 root_router.include_router(company_router)
+root_router.include_router(address_router)
 
 app.include_router(root_router)
 
@@ -195,6 +199,23 @@ async def incorrect_enum_value_exception(
 @app.exception_handler(UserAlreadyHasCompanyException)
 async def user_already_has_company_exception(
     request: Request, exception: UserAlreadyHasCompanyException
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
+    )
+
+@app.exception_handler(UserHasNoCompanyException)
+async def user_has_no_company_exception(
+    request: Request, exception: UserHasNoCompanyException
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
+    )
+
+
+@app.exception_handler(IncorrectCompanyOrPropertyValueException)
+async def incorrect_company_or_property_value_exception(
+    request: Request, exception: IncorrectCompanyOrPropertyValueException
 ) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}

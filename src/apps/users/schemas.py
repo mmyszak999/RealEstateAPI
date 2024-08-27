@@ -79,12 +79,22 @@ class UserInfoOutputSchema(UserBaseSchema):
         orm_mode = True
 
 
+class UserCompanyOutputSchema(BaseModel):
+    company_name: str
+    foundation_year: int
+    phone_number: str
+
+    class Config:
+        orm_mode = True
+        
+        
 class UserOutputSchema(UserInputSchema):
     id: str
     is_active: bool
     is_superuser: bool
     is_staff: bool
     created_at: Optional[datetime.datetime]
+    company: Optional[UserCompanyOutputSchema]
 
     class Config:
         orm_mode = True

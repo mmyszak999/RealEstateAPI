@@ -7,6 +7,7 @@ from pydantic import BaseModel, EmailStr, Field, validator
 
 from src.apps.properties.enums import PropertyTypeEnum, PropertyStatusEnum
 from src.apps.users.schemas import UserInfoOutputSchema, UserIdSchema
+from src.apps.addresses.schemas import AddressBasicOutputSchema
 
 
 class PropertyBaseSchema(BaseModel):
@@ -56,6 +57,7 @@ class PropertyOutputSchema(PropertyBasicOutputSchema):
     description: Optional[str]
     property_value: Decimal
     created_at: Optional[datetime.datetime]
+    address: Optional[AddressBasicOutputSchema] = []
 
     class Config:
         orm_mode = True
