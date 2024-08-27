@@ -31,14 +31,14 @@ property_router = APIRouter(prefix="/properties", tags=["property"])
 
 @property_router.post(
     "/",
-    response_model=PropertyOutputSchema,
+    response_model=PropertyBasicOutputSchema,
     status_code=status.HTTP_201_CREATED,
 )
 async def post_property(
     property: PropertyInputSchema,
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
-) -> PropertyOutputSchema:
+) -> PropertyBasicOutputSchema:
     await check_if_staff(request_user)
     return await create_property(session, property)
 

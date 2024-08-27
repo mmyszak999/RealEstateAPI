@@ -31,20 +31,19 @@ from src.core.utils.orm import if_exists
 
 async def create_property(
     session: AsyncSession, property_input: PropertyInputSchema
-) -> PropertyOutputSchema:
+) -> PropertyBasicOutputSchema:
     property_data = property_input.dict()
     if owner_id := property_data.get("owner_id"):
         if not (owner_object := await if_exists(User, "id", owner_id, session)):
             raise DoesNotExist(User.__name__, "id", owner_id)
     
-    property_status = property_data.get('property_status', "")
-    
+    property_status = property_data.get('property_status', "").value
     if property_status and (property_status not in PropertyStatusEnum.list_values()):
         raise IncorrectEnumValueException(
             "property_status", property_status, PropertyStatusEnum.list_values()
         )
         
-    property_type = property_data.get('property_type', "")
+    property_type = property_data.get('property_type', "").value
     
     if property_type and (property_type not in PropertyTypeEnum.list_values()):
         raise IncorrectEnumValueException(
@@ -55,7 +54,7 @@ async def create_property(
     session.add(new_property)
     await session.commit()
 
-    return PropertyOutputSchema.from_orm(new_property)
+    return PropertyBasicOutputSchema.from_orm(new_property)
 
 
 async def get_single_property(

@@ -30,11 +30,11 @@ class Address(Base):
         ForeignKey("company.id", ondelete="cascade", onupdate="cascade"),
         nullable=True,
     )
-    company = relationship("Company", back_populates="address", lazy="select")
+    company = relationship("Company", back_populates="address", lazy="subquery")
     property_id = Column(
         String(length=50),
         ForeignKey("property.id", ondelete="cascade", onupdate="cascade"),
         nullable=True,
     )
-    property = relationship("Property", back_populates="address", lazy="select")
+    property = relationship("Property", back_populates="address", lazy="subquery")
     

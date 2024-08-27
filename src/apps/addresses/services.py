@@ -17,7 +17,8 @@ from src.core.exceptions import (
     DoesNotExist,
     IsOccupied,
     ServiceException,
-    IncorrectCompanyOrPropertyValueException
+    IncorrectCompanyOrPropertyValueException,
+    AddressAlreadyAssignedException
 )
 from src.apps.companies.models import Company
 from src.apps.properties.models import Property
@@ -42,15 +43,26 @@ async def create_address(
     
     if company_id and (not (company_object := await if_exists(Company, "id", company_id, session))):
         raise DoesNotExist(Company.__name__, "id", company_id)
+
+        if company_object.address:
+            raise AddressAlreadyAssignedException(object="Company")
     
     if property_id and (not (property_object := await if_exists(Property, "id", property_id, session))):
         raise DoesNotExist(Property.__name__, "id", property_id)
+
+        if property_object.address:
+            raise AddressAlreadyAssignedException(object="Property")
+    
+    
+    
+        
 
     new_address = Address(**address_data)
     new_address.company_id = company_id
     new_address.property_id = property_id
     session.add(new_address)
     await session.commit()
+    await session.refresh(new_address)
 
     return AddressOutputSchema.from_orm(new_address)
 
@@ -90,7 +102,7 @@ async def update_single_address(
     if not (address_object := await if_exists(Address, "id", address_id, session)):
         raise DoesNotExist(Address.__name__, "id", address_id)
 
-    address_data = address_input.dict(exclude_unset=True)
+    address_data = address_input.dict(exclude_unset=True, exclude_none=True)
 
     if address_data:
         statement = (
@@ -104,6 +116,7 @@ async def update_single_address(
     return await get_single_address(session, address_id=address_id, output_schema=AddressBasicOutputSchema)
 
 
+"""
 async def add_single_user_to_address(
     session: AsyncSession, user_address_schema: UserIdSchema, address_id: str
 ) -> AddressOutputSchema:
@@ -123,7 +136,7 @@ async def add_single_user_to_address(
     user_object.address_id = address_id
     session.add(user_object)
     await session.commit()
-    return
+    return"""
     
     
         

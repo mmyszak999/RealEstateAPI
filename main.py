@@ -28,7 +28,8 @@ from src.core.exceptions import (
     IncorrectEnumValueException,
     UserAlreadyHasCompanyException,
     IncorrectCompanyOrPropertyValueException,
-    UserHasNoCompanyException
+    UserHasNoCompanyException,
+    AddressAlreadyAssignedException
 )
 
 app = FastAPI(
@@ -216,6 +217,14 @@ async def user_has_no_company_exception(
 @app.exception_handler(IncorrectCompanyOrPropertyValueException)
 async def incorrect_company_or_property_value_exception(
     request: Request, exception: IncorrectCompanyOrPropertyValueException
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
+    )
+
+@app.exception_handler(AddressAlreadyAssignedException)
+async def address_already_assigned_exception(
+    request: Request, exception: AddressAlreadyAssignedException
 ) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}

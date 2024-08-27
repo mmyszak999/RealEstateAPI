@@ -112,3 +112,10 @@ class IncorrectCompanyOrPropertyValueException(ServiceException):
             f"Single address can be assigned to company or property! "
             f"Provided values of both or none of them! "
         )
+
+
+class AddressAlreadyAssignedException(ServiceException):
+    def __init__(self, object: str) -> None:
+        super().__init__(
+            f"{object} already has address assigned! "
+        )
