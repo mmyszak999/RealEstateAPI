@@ -43,3 +43,4 @@ class Property(Base):
     )
     owner = relationship("User", back_populates="properties", lazy="selectin")
     created_at = Column(DateTime, default=dt.datetime.now, nullable=True)
+    address = relationship("Address", uselist=False, back_populates="property")
