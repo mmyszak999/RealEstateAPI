@@ -59,7 +59,7 @@ async def create_property(
 
 
 async def get_single_property(
-    session: AsyncSession, property_id: int, output_schema: BaseModel = PropertyOutputSchema
+    session: AsyncSession, property_id: str, output_schema: BaseModel = PropertyOutputSchema
 ) -> Union[
         PropertyOutputSchema,
         PropertyBasicOutputSchema
@@ -97,7 +97,7 @@ async def get_all_properties(
 
 
 async def update_single_property(
-    session: AsyncSession, property_input: PropertyUpdateSchema, property_id: int
+    session: AsyncSession, property_input: PropertyUpdateSchema, property_id: str
 ) -> PropertyOutputSchema:
     if not (property_object := await if_exists(Property, "id", property_id, session)):
         raise DoesNotExist(Property.__name__, "id", property_id)
@@ -131,7 +131,7 @@ async def update_single_property(
 
 
 async def change_property_owner(
-    session: AsyncSession, property_input: PropertyOwnerIdSchema, property_id: int
+    session: AsyncSession, property_input: PropertyOwnerIdSchema, property_id: str
 ) -> None:
     if not (property_object := await if_exists(Property, "id", property_id, session)):
         raise DoesNotExist(Property.__name__, "id", property_id)

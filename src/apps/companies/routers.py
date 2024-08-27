@@ -2,19 +2,22 @@ from typing import Union
 
 from fastapi import Depends, Request, Response, status
 from fastapi.routing import APIRouter
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.apps.companies.schemas import (
     CompanyInputSchema,
     CompanyOutputSchema,
     CompanyUpdateSchema,
-    CompanyBasicOutputSchema
+    CompanyBasicOutputSchema,
 )
+from src.apps.users.schemas import UserIdSchema
 from src.apps.companies.services import (
     create_company,
     get_all_companies,
     get_single_company,
     update_single_company,
+    add_single_user_to_company
 )
 from src.apps.users.models import User
 from src.core.pagination.models import PageParams
@@ -90,3 +93,21 @@ async def update_company(
 ) -> CompanyOutputSchema:
     await check_if_staff(request_user)
     return await update_single_company(session, company_input, company_id)
+
+
+@company_router.patch(
+    "/{company_id}/add-user",
+    status_code=status.HTTP_200_OK,
+)
+async def add_user_to_company(
+    company_id: str,
+    user_company_input: UserIdSchema,
+    session: AsyncSession = Depends(get_db),
+    request_user: User = Depends(authenticate_user),
+) -> JSONResponse:
+    await check_if_staff(request_user)
+    await add_single_user_to_company(session, user_company_input, company_id)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"message": "The user has been added to the company! "},
+    ) 

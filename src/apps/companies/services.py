@@ -11,12 +11,20 @@ from src.apps.companies.schemas import (
     CompanyUpdateSchema,
     CompanyBasicOutputSchema
 )
-from src.core.exceptions import AlreadyExists, DoesNotExist, IsOccupied
+from src.apps.users.schemas import UserIdSchema
+from src.core.exceptions import (
+    AlreadyExists,
+    DoesNotExist,
+    IsOccupied,
+    UserAlreadyHasCompanyException,
+    ServiceException
+)
 from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
 from src.core.pagination.services import paginate
 from src.core.utils.filter import filter_and_sort_instances
 from src.core.utils.orm import if_exists
+from src.apps.users.models import User
 
 
 async def create_company(
@@ -38,7 +46,7 @@ async def create_company(
 
 
 async def get_single_company(
-    session: AsyncSession, company_id: int, output_schema: BaseModel = CompanyOutputSchema
+    session: AsyncSession, company_id: str, output_schema: BaseModel = CompanyOutputSchema
 ) -> Union[
     CompanyOutputSchema,
     CompanyBasicOutputSchema
@@ -67,7 +75,7 @@ async def get_all_companies(
 
 
 async def update_single_company(
-    session: AsyncSession, company_input: CompanyUpdateSchema, company_id: int
+    session: AsyncSession, company_input: CompanyUpdateSchema, company_id: str
 ) -> CompanyOutputSchema:
     if not (company_object := await if_exists(Company, "id", company_id, session)):
         raise DoesNotExist(Company.__name__, "id", company_id)
@@ -90,3 +98,30 @@ async def update_single_company(
         await session.refresh(company_object)
 
     return await get_single_company(session, company_id=company_id)
+
+
+async def add_single_user_to_company(
+    session: AsyncSession, user_company_schema: UserIdSchema, company_id: str
+) -> CompanyOutputSchema:
+    if not (company_object := await if_exists(Company, "id", company_id, session)):
+        raise DoesNotExist(Company.__name__, "id", company_id)
+    
+    user_id = user_company_schema.id
+    if not (user_object := await if_exists(User, "id", user_id, session)):
+        raise DoesNotExist(User.__name__, "id", user_id)
+    
+    if user_object.company:
+        raise UserAlreadyHasCompanyException
+    
+    if not user_object.is_active:
+        raise ServiceException("Inactive user cannot be added to the company! ")
+    
+    user_object.company_id = company_id
+    session.add(user_object)
+    await session.commit()
+    return
+    
+    
+        
+    
+    

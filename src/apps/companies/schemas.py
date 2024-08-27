@@ -42,10 +42,3 @@ class CompanyOutputSchema(CompanyBasicOutputSchema):
 
     class Config:
         orm_mode = True
-
-
-class CompanyIdSchema(BaseModel):
-    id: str
-    
-    class Config:
-        orm_mode = True
