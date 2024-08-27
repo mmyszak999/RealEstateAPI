@@ -82,6 +82,7 @@ async def update_single_company(
 
     company_data = company_input.dict(exclude_unset=True, exclude_none=True)
 
+    print(company_object.company_name, company_data.get('company_name'), "ww")
     if company_data and (company_data.get('company_name') != company_object.company_name):
         company_name_check = await session.scalar(
             select(Company).filter(Company.company_name == company_input.company_name).limit(1)
@@ -103,6 +104,7 @@ async def update_single_company(
 async def manage_user_company_status(
     session: AsyncSession, user_company_schema: UserIdSchema, company_id: str, add_user: bool = True
 ) -> None:
+    print(company_id)
     if not (company_object := await if_exists(Company, "id", company_id, session)):
         raise DoesNotExist(Company.__name__, "id", company_id)
     

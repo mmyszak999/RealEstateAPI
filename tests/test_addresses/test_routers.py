@@ -20,7 +20,7 @@ from tests.test_addresses.conftest import (
     db_addresses
 )
 from src.apps.companies.schemas import CompanyOutputSchema
-from tests.test_company.conftest import db_companies
+from tests.test_companies.conftest import db_companies
 from src.core.pagination.schemas import PagedResponseSchema
 
 

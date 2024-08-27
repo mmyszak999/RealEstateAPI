@@ -16,7 +16,7 @@ from tests.test_users.conftest import (
     db_user,
     staff_auth_headers,
 )
-from tests.test_company.conftest import (
+from tests.test_companies.conftest import (
     db_companies
 )
 from src.core.pagination.schemas import PagedResponseSchema

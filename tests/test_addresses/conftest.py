@@ -17,7 +17,7 @@ from src.apps.properties.schemas import PropertyOutputSchema
 from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
 from tests.test_users.conftest import db_user, db_staff_user
-from tests.test_company.conftest import db_companies
+from tests.test_companies.conftest import db_companies
 from tests.test_properties.conftest import db_properties
 
 DB_COMPANIES_ADDRESSES_SCHEMAS = [AddressInputSchemaFactory().generate() for _ in range(2)]
