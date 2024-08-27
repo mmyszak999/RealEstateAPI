@@ -96,3 +96,8 @@ class IncorrectEnumValueException(ServiceException):
             f"Pick from available values: {available_values}"
         )
 
+class UserAlreadyHasCompanyException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(f"User already belongs to the other company! ")
+    
+

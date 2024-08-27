@@ -14,8 +14,8 @@ class PropertyBaseSchema(BaseModel):
     property_status: PropertyStatusEnum
     short_description: str = Field(max_length=100)
     square_meter: Decimal
-    rooms_amount: Optional[int]
-    year_built: Optional[int]
+    rooms_amount: Optional[int] = Field(ge=0)
+    year_built: Optional[int] = Field(ge=0)
 
     class Config:
         orm_mode = True

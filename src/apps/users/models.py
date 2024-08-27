@@ -29,3 +29,9 @@ class User(Base):
     phone_number = Column(String(length=50), nullable=False)
     created_at = Column(DateTime, default=dt.datetime.now, nullable=True)
     properties = relationship("Property", back_populates="owner", lazy="selectin")
+    company_id = Column(
+        String(length=50),
+        ForeignKey("company.id", ondelete="SET NULL", onupdate="cascade"),
+        nullable=True,
+    )
+    company = relationship("Company", back_populates="users", lazy="joined")
