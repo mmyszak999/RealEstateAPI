@@ -35,7 +35,7 @@ class AddressInputSchemaFactory(SchemaFactory):
         )
 
 class AddressUpdateSchemaFactory(SchemaFactory):
-    def __init__(self, schema_class=AddressInputSchema):
+    def __init__(self, schema_class=AddressUpdateSchema):
         super().__init__(schema_class)
 
     def generate(
