@@ -90,7 +90,7 @@ async def update_single_address(
     if not (address_object := await if_exists(Address, "id", address_id, session)):
         raise DoesNotExist(Address.__name__, "id", address_id)
 
-    address_data = address_input.dict(exclude_unset=True)
+    address_data = address_input.dict(exclude_unset=True, exclude_none=True)
 
     if address_data:
         statement = (
@@ -104,6 +104,7 @@ async def update_single_address(
     return await get_single_address(session, address_id=address_id, output_schema=AddressBasicOutputSchema)
 
 
+"""
 async def add_single_user_to_address(
     session: AsyncSession, user_address_schema: UserIdSchema, address_id: str
 ) -> AddressOutputSchema:
@@ -123,7 +124,7 @@ async def add_single_user_to_address(
     user_object.address_id = address_id
     session.add(user_object)
     await session.commit()
-    return
+    return"""
     
     
         
