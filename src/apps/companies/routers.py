@@ -75,7 +75,7 @@ async def get_company(
         CompanyOutputSchema,
         CompanyBasicOutputSchema
         ]:
-    if request_user.is_staff:
+    if request_user.is_staff or request_user.company_id == company_id:
         return await get_single_company(session, company_id)
     return await get_single_company(session, company_id, output_schema=CompanyBasicOutputSchema)
 
