@@ -51,7 +51,6 @@ async def test_only_staff_user_can_create_address(
     response = await async_client.post(
         "addresses/", headers=user_headers, content=address_data.json()
     )
-    print(response.json())
     assert response.status_code == status_code
 
 

@@ -24,15 +24,18 @@ DB_PROPERTIES_SCHEMAS = [
 DB_PROPERTIES_SCHEMAS.append(
     PropertyInputSchemaFactory().generate(property_status=PropertyStatusEnum.UNAVAILABLE)
 )
-#the last property will be unavailable
+
+
+"""
+the last property will be unavailable
+and the first one will have the ownership
+"""
 
 
 @pytest_asyncio.fixture
 async def db_properties(
     async_session: AsyncSession, db_staff_user: UserOutputSchema
 ) -> PagedResponseSchema[PropertyOutputSchema]:
-    print(PropertyStatusEnum.list_values(), "xd")
-    print(type(PropertyStatusEnum.UNAVAILABLE.value), PropertyStatusEnum.UNAVAILABLE.value, "www")
     properties = [
         await create_property(async_session, property_input) for property_input in DB_PROPERTIES_SCHEMAS
     ]
