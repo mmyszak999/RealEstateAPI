@@ -52,8 +52,8 @@ class PropertyUpdateSchemaFactory(SchemaFactory):
 
     def generate(
         self,
-        property_type: PropertyTypeEnum = None,
-        property_status: PropertyStatusEnum = None,
+        property_type: str = None,
+        property_status: str = None,
         short_description: str = None,
         square_meter: Decimal = None,
         rooms_amount: Optional[int] = None,
