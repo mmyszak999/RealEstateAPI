@@ -99,6 +99,11 @@ class IncorrectEnumValueException(ServiceException):
 class UserAlreadyHasCompanyException(ServiceException):
     def __init__(self) -> None:
         super().__init__(f"User already belongs to the other company! ")
+
+
+class UserHasNoCompanyException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(f"User does not belong to any company so cannot be removed from one! ")
     
 
 class IncorrectCompanyOrPropertyValueException(ServiceException):

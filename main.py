@@ -27,7 +27,8 @@ from src.core.exceptions import (
     OwnerAlreadyHasTheOwnershipException,
     IncorrectEnumValueException,
     UserAlreadyHasCompanyException,
-    IncorrectCompanyOrPropertyValueException
+    IncorrectCompanyOrPropertyValueException,
+    UserHasNoCompanyException
 )
 
 app = FastAPI(
@@ -198,6 +199,14 @@ async def incorrect_enum_value_exception(
 @app.exception_handler(UserAlreadyHasCompanyException)
 async def user_already_has_company_exception(
     request: Request, exception: UserAlreadyHasCompanyException
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
+    )
+
+@app.exception_handler(UserHasNoCompanyException)
+async def user_has_no_company_exception(
+    request: Request, exception: UserHasNoCompanyException
 ) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}

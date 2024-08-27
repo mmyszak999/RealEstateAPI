@@ -17,7 +17,8 @@ from src.apps.companies.services import (
     get_all_companies,
     get_single_company,
     update_single_company,
-    add_single_user_to_company
+    add_single_user_to_company,
+    remove_single_user_from_company
 )
 from src.apps.users.models import User
 from src.core.pagination.models import PageParams
@@ -110,4 +111,21 @@ async def add_user_to_company(
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"message": "The user has been added to the company! "},
+    ) 
+
+@company_router.patch(
+    "/{company_id}/remove-user",
+    status_code=status.HTTP_200_OK,
+)
+async def remove_user_from_company(
+    company_id: str,
+    user_company_input: UserIdSchema,
+    session: AsyncSession = Depends(get_db),
+    request_user: User = Depends(authenticate_user),
+) -> JSONResponse:
+    await check_if_staff(request_user)
+    await remove_single_user_from_company(session, user_company_input, company_id)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"message": "The user has been removed from the company! "},
     ) 

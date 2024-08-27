@@ -17,7 +17,8 @@ from src.core.exceptions import (
     DoesNotExist,
     IsOccupied,
     UserAlreadyHasCompanyException,
-    ServiceException
+    ServiceException,
+    UserHasNoCompanyException
 )
 from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
@@ -99,9 +100,9 @@ async def update_single_company(
     return await get_single_company(session, company_id=company_id)
 
 
-async def add_single_user_to_company(
-    session: AsyncSession, user_company_schema: UserIdSchema, company_id: str
-) -> CompanyOutputSchema:
+async def manage_user_company_status(
+    session: AsyncSession, user_company_schema: UserIdSchema, company_id: str, add_user: bool = True
+) -> None:
     if not (company_object := await if_exists(Company, "id", company_id, session)):
         raise DoesNotExist(Company.__name__, "id", company_id)
     
@@ -109,17 +110,34 @@ async def add_single_user_to_company(
     if not (user_object := await if_exists(User, "id", user_id, session)):
         raise DoesNotExist(User.__name__, "id", user_id)
     
-    if user_object.company:
+    if not user_object.is_active:
+        raise ServiceException("Inactive user cannot be added or removed from the company! ")
+    
+    if user_object.company and add_user:
         raise UserAlreadyHasCompanyException
     
-    if not user_object.is_active:
-        raise ServiceException("Inactive user cannot be added to the company! ")
+    if (not user_object.company and not add_user):
+        raise UserHasNoCompanyException
     
-    user_object.company_id = company_id
+    company = company_id if add_user else None
+    user_object.company_id = company
     session.add(user_object)
     await session.commit()
     return
-    
+
+async def add_single_user_to_company(
+    session: AsyncSession, user_company_schema: UserIdSchema, company_id: str,
+) -> None:
+    return await manage_user_company_status(
+        session, user_company_schema, company_id
+    )
+
+async def remove_single_user_from_company(
+    session: AsyncSession, user_company_schema: UserIdSchema, company_id: str,
+) -> None:
+    return await manage_user_company_status(
+        session, user_company_schema, company_id, add_user=False
+    )
     
         
     
