@@ -3,10 +3,6 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, EmailStr, Field, validator
 
-from src.apps.users.schemas import UserInfoOutputSchema
-from src.apps.companies.schemas import CompanyBasicOutputSchema
-from src.apps.properties.schemas import PropertyBasicOutputSchema
-
 
 class AddressBaseSchema(BaseModel):
     country: str
@@ -44,8 +40,7 @@ class AddressBasicOutputSchema(AddressBaseSchema):
     
 
 class AddressOutputSchema(AddressBasicOutputSchema):
-    company: Optional[CompanyBasicOutputSchema]
-    property: Optional[PropertyBasicOutputSchema]
+    pass
 
     class Config:
         orm_mode = True

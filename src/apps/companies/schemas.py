@@ -4,6 +4,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, EmailStr, Field, validator
 
 from src.apps.users.schemas import UserInfoOutputSchema
+from src.apps.addresses.schemas import AddressBasicOutputSchema
 
 
 class CompanyBaseSchema(BaseModel):
@@ -38,7 +39,8 @@ class CompanyBasicOutputSchema(CompanyInputSchema):
 
 
 class CompanyOutputSchema(CompanyBasicOutputSchema):
-    users: Optional[list[UserInfoOutputSchema]] = []
+    users: list[UserInfoOutputSchema] = []
+    address: Optional[AddressBasicOutputSchema] = []
 
     class Config:
         orm_mode = True
