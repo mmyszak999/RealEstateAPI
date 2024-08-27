@@ -34,7 +34,7 @@ async def create_company(
     company_data = company_input.dict()
 
     if company_name_check := await if_exists(
-        Company, "company_name", company_data.get(company_name), session
+        Company, "company_name", company_data.get("company_name"), session
     ):
         raise AlreadyExists(Company.__name__, "company_name", company_data.get("company_name"))
 
@@ -80,7 +80,7 @@ async def update_single_company(
     if not (company_object := await if_exists(Company, "id", company_id, session)):
         raise DoesNotExist(Company.__name__, "id", company_id)
 
-    company_data = company_input.dict(exclude_unset=True)
+    company_data = company_input.dict(exclude_unset=True, exclude_none=True)
 
     if company_data and (company_data.get('company_name') != company_object.company_name):
         company_name_check = await session.scalar(
@@ -123,6 +123,7 @@ async def manage_user_company_status(
     user_object.company_id = company
     session.add(user_object)
     await session.commit()
+    await session.refresh(user_object)
     return
 
 async def add_single_user_to_company(

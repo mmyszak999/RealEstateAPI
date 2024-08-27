@@ -4,6 +4,7 @@ from decimal import Decimal
 from faker import Faker
 from faker.providers import address, date_time, internet, lorem, misc, person, phone_number
 from faker_commerce import Provider as commerce_provider
+from src.apps.properties.enums import PropertyStatusEnum, PropertyTypeEnum
 
 
 def initialize_faker():
@@ -21,49 +22,25 @@ def initialize_faker():
     return faker
 
 
-def set_product_weight() -> int:
-    return random.randint(1, 10)
+def set_random_foundation_year() -> int:
+    return random.randint(1900, 2024)
 
 
-def set_product_count() -> int:
-    return random.randint(2, 5)
+def set_random_property_value() -> int:
+    return random.randint(10000, 10000000)
 
 
-def set_waiting_room_weight() -> int:
-    return random.randint(400, 5000)
+def set_random_rooms_amount() -> int:
+    return random.randint(1, 5)
 
 
-def set_waiting_room_stocks() -> int:
-    return random.randint(5, 10)
+def set_random_square_meter_amount() -> int:
+    return random.randint(30, 500)
 
 
-def set_max_waiting_rooms() -> int:
-    return random.randint(5, 8)
+def set_random_property_status() -> PropertyStatusEnum:
+    return random.choice(PropertyStatusEnum.list_values())
 
 
-def set_max_sections() -> int:
-    return random.randint(4, 6)
-
-
-def set_max_section_weight() -> int:
-    return random.randint(20000, 40000)
-
-
-def set_max_racks() -> int:
-    return random.randint(6, 9)
-
-
-def set_rack_weight() -> int:
-    return random.randint(1000, 2000)
-
-
-def set_rack_levels() -> int:
-    return random.randint(5, 7)
-
-
-def set_rack_level_slots() -> int:
-    return random.randint(2, 4)
-
-
-def set_rack_level_weight() -> int:
-    return random.randint(80, 150)
+def set_random_property_type() -> PropertyTypeEnum:
+    return random.choice(PropertyTypeEnum.list_values())

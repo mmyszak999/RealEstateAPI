@@ -49,7 +49,6 @@ async def test_every_user_can_create_new_account(
 
 
 
-
 @pytest.mark.asyncio
 async def test_if_user_was_logged_correctly(
     async_client: AsyncClient, db_user: UserOutputSchema
