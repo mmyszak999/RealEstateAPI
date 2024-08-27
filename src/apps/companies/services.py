@@ -32,10 +32,9 @@ async def create_company(
 ) -> CompanyBasicOutputSchema:
     company_data = company_input.dict()
 
-    company_name_check = await session.scalar(
-        select(Company).filter(Company.company_name == company_data.get("company_name")).limit(1)
-    )
-    if company_name_check:
+    if company_name_check := await if_exists(
+        Company, "company_name", company_data.get(company_name), session
+    ):
         raise AlreadyExists(Company.__name__, "company_name", company_data.get("company_name"))
 
     new_company = Company(**company_data)

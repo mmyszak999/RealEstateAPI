@@ -5,19 +5,18 @@ from fastapi.routing import APIRouter
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.apps.companies.schemas import (
-    CompanyInputSchema,
-    CompanyOutputSchema,
-    CompanyUpdateSchema,
-    CompanyBasicOutputSchema,
+from src.apps.addresses.schemas import (
+    AddressInputSchema,
+    AddressOutputSchema,
+    AddressUpdateSchema,
+    AddressBasicOutputSchema,
 )
 from src.apps.users.schemas import UserIdSchema
-from src.apps.companies.services import (
-    create_company,
-    get_all_companies,
-    get_single_company,
-    update_single_company,
-    add_single_user_to_company
+from src.apps.addresses.services import (
+    create_address,
+    get_all_addresses,
+    get_single_address,
+    update_single_address
 )
 from src.apps.users.models import User
 from src.core.pagination.models import PageParams
@@ -26,88 +25,70 @@ from src.core.permissions import check_if_staff
 from src.dependencies.get_db import get_db
 from src.dependencies.user import authenticate_user
 
-company_router = APIRouter(prefix="/companies", tags=["company"])
+address_router = APIRouter(prefix="/addresses", tags=["address"])
 
 
-@company_router.post(
+@address_router.post(
     "/",
-    response_model=CompanyBasicOutputSchema,
+    response_model=AddressBasicOutputSchema,
     status_code=status.HTTP_201_CREATED,
 )
-async def post_company(
-    company: CompanyInputSchema,
+async def post_address(
+    address: AddressInputSchema,
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
-) -> CompanyBasicOutputSchema:
+) -> AddressBasicOutputSchema:
     await check_if_staff(request_user)
-    return await create_company(session, company)
+    return await create_address(session, address)
 
 
-@company_router.get(
+@address_router.get(
     "/",
-    response_model=PagedResponseSchema[CompanyBasicOutputSchema],
+    response_model=PagedResponseSchema[AddressBasicOutputSchema],
     status_code=status.HTTP_200_OK,
 )
-async def get_companies(
+async def get_addresses(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
     request_user: User = Depends(authenticate_user),
-) -> PagedResponseSchema[CompanyBasicOutputSchema]:
-    return await get_all_companies(
+) -> PagedResponseSchema[AddressBasicOutputSchema]:
+    return await get_all_addresses(
         session, page_params, query_params=request.query_params.multi_items()
     )
 
 
-@company_router.get(
-    "/{company_id}",
+@address_router.get(
+    "/{address_id}",
     response_model=Union[
-        CompanyOutputSchema,
-        CompanyBasicOutputSchema
+        AddressOutputSchema,
+        AddressBasicOutputSchema
         ],
     status_code=status.HTTP_200_OK,
 )
-async def get_company(
-    company_id: str,
+async def get_address(
+    address_id: str,
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
 ) -> Union[
-        CompanyOutputSchema,
-        CompanyBasicOutputSchema
+        AddressOutputSchema,
+        AddressBasicOutputSchema
         ]:
-    if request_user.is_staff or request_user.company_id == company_id:
-        return await get_single_company(session, company_id)
-    return await get_single_company(session, company_id, output_schema=CompanyBasicOutputSchema)
+    if request_user.is_staff:
+        return await get_single_address(session, address_id)
+    return await get_single_address(session, address_id, output_schema=AddressBasicOutputSchema)
 
 
-@company_router.patch(
-    "/{company_id}",
-    response_model=CompanyOutputSchema,
+@address_router.patch(
+    "/{address_id}",
+    response_model=AddressBasicOutputSchema,
     status_code=status.HTTP_200_OK,
 )
-async def update_company(
-    company_id: str,
-    company_input: CompanyUpdateSchema,
+async def update_address(
+    address_id: str,
+    address_input: AddressUpdateSchema,
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
-) -> CompanyOutputSchema:
+) -> AddressBasicOutputSchema:
     await check_if_staff(request_user)
-    return await update_single_company(session, company_input, company_id)
-
-
-@company_router.patch(
-    "/{company_id}/add-user",
-    status_code=status.HTTP_200_OK,
-)
-async def add_user_to_company(
-    company_id: str,
-    user_company_input: UserIdSchema,
-    session: AsyncSession = Depends(get_db),
-    request_user: User = Depends(authenticate_user),
-) -> JSONResponse:
-    await check_if_staff(request_user)
-    await add_single_user_to_company(session, user_company_input, company_id)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={"message": "The user has been added to the company! "},
-    ) 
+    return await update_single_address(session, address_input, address_id)

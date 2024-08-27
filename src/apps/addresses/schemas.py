@@ -4,6 +4,8 @@ from typing import Any, Optional
 from pydantic import BaseModel, EmailStr, Field, validator
 
 from src.apps.users.schemas import UserInfoOutputSchema
+from src.apps.companies.schemas import CompanyBasicOutputSchema
+from src.apps.properties.schemas import PropertyBasicOutputSchema
 
 
 class AddressBaseSchema(BaseModel):
@@ -14,12 +16,11 @@ class AddressBaseSchema(BaseModel):
     street: Optional[str]
     house_number: str
     apartment_number: Optional[str]
-    company_id: Optional[str]
-    property_id: Optional[str]
 
 
 class AddressInputSchema(AddressBaseSchema):
-    pass
+    company_id: Optional[str]
+    property_id: Optional[str]
 
     class Config:
         orm_mode = True
@@ -35,8 +36,16 @@ class AddressUpdateSchema(BaseModel):
     apartment_number: Optional[str]
 
 
-class AddressOutputSchema(AddressBaseSchema):
+class AddressBasicOutputSchema(AddressBaseSchema):
     id: str
+    
+    class Config:
+        orm_mode = True
+    
+
+class AddressOutputSchema(AddressBasicOutputSchema):
+    company: Optional[CompanyBasicOutputSchema]
+    property: Optional[PropertyBasicOutputSchema]
 
     class Config:
         orm_mode = True

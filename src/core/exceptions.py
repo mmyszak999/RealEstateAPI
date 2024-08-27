@@ -101,3 +101,9 @@ class UserAlreadyHasCompanyException(ServiceException):
         super().__init__(f"User already belongs to the other company! ")
     
 
+class IncorrectCompanyOrPropertyValueException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            f"Single address can be assigned to company or property! "
+            f"Provided values of both or none of them! "
+        )
