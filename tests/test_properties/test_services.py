@@ -22,6 +22,7 @@ from src.core.factory.property_factory import (
     PropertyInputSchemaFactory,
     PropertyUpdateSchemaFactory,
 )
+from src.apps.properties.enums import PropertyStatusEnum, PropertyTypeEnum
 from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
 from src.core.utils.utils import generate_uuid
@@ -56,7 +57,6 @@ async def test_raise_exception_when_creating_property_and_owner_is_not_active(
     schema = PropertyInputSchemaFactory().generate(owner_id=user.id)
     with pytest.raises(ServiceException):
         await create_property(async_session, schema)
-
 
 @pytest.mark.asyncio
 async def test_if_only_one_property_was_returned(

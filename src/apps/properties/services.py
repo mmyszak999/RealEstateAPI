@@ -47,7 +47,6 @@ async def create_property(
         )
         
     property_type = property_data.get('property_type', "").value
-    
     if property_type and (property_type not in PropertyTypeEnum.list_values()):
         raise IncorrectEnumValueException(
             "property_type", property_type, PropertyTypeEnum.list_values()
