@@ -76,6 +76,7 @@ async def get_all_properties(
     page_params: PageParams,
     get_available: bool = False,
     get_rented: bool = False,
+    output_schema: BaseModel = PropertyBasicOutputSchema,
     query_params: list[tuple] = None
 ) -> PagedResponseSchema[PropertyBasicOutputSchema]:
     query = select(Property)
@@ -90,7 +91,7 @@ async def get_all_properties(
 
     return await paginate(
         query=query,
-        response_schema=PropertyBasicOutputSchema,
+        response_schema=output_schema,
         table=Property,
         page_params=page_params,
         session=session,

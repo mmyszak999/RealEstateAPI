@@ -80,7 +80,7 @@ async def test_staff_and_authenticated_user_can_get_all_addresses(
     response = await async_client.get("addresses/", headers=user_headers)
 
     assert response.status_code == status_code
-    assert response.json()["total"] == 6
+    assert response.json()["total"] == 5
 
 
 @pytest.mark.parametrize(

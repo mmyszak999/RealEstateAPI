@@ -16,8 +16,7 @@ from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
 from tests.test_users.conftest import db_user, db_staff_user
 
-DB_COMPANIES_SCHEMAS = [CompanyInputSchemaFactory().generate() for _ in range(2)]
-#the last schema is not used
+DB_COMPANIES_SCHEMAS = [CompanyInputSchemaFactory().generate() for _ in range(3)]
 
 
 @pytest_asyncio.fixture
@@ -30,4 +29,4 @@ async def db_companies(
     await add_single_user_to_company(
         async_session, UserIdSchema(id=db_staff_user.id), companies[0].id
     )
-    return await get_all_companies(async_session, PageParams())
+    return await get_all_companies(async_session, PageParams(), output_schema=CompanyOutputSchema)

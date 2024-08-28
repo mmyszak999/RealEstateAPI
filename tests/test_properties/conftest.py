@@ -42,4 +42,4 @@ async def db_properties(
     await change_property_owner(
         async_session, UserIdSchema(id=db_staff_user.id), properties[0].id
     )
-    return await get_all_properties(async_session, PageParams())
+    return await get_all_properties(async_session, PageParams(), output_schema=PropertyOutputSchema)
