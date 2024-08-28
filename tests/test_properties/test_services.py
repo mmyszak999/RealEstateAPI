@@ -111,7 +111,8 @@ async def test_raise_exception_when_updating_property_and_entered_incorrect_prop
     db_properties: PagedResponseSchema[PropertyOutputSchema],
     db_user: UserOutputSchema
 ):
-    schema = PropertyUpdateSchemaFactory().generate(property_status="no_such_status")
+    schema = PropertyUpdateSchemaFactory().generate()
+    schema.property_status = "no_such_status"
     with pytest.raises(IncorrectEnumValueException):
         await update_single_property(async_session, schema, db_properties.results[0].id)
 
@@ -122,7 +123,8 @@ async def test_raise_exception_when_updating_property_and_entered_incorrect_prop
     db_properties: PagedResponseSchema[PropertyOutputSchema],
     db_user: UserOutputSchema
 ):
-    schema = PropertyUpdateSchemaFactory().generate(property_type="no_such_type")
+    schema = PropertyUpdateSchemaFactory().generate()
+    schema.property_type = "no_such_type"
     with pytest.raises(IncorrectEnumValueException):
         await update_single_property(async_session, schema, db_properties.results[0].id)
         
