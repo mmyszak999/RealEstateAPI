@@ -35,3 +35,5 @@ class User(Base):
         nullable=True,
     )
     company = relationship("Company", back_populates="users", lazy="joined")
+    owner_leases = relationship("Lease", back_populates="owner", lazy="joined")
+    tenant_leases = relationship("Lease", back_populates="tenant", lazy="joined")

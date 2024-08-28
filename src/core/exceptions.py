@@ -119,3 +119,11 @@ class AddressAlreadyAssignedException(ServiceException):
         super().__init__(
             f"{object} already has address assigned! "
         )
+        
+
+class PropertyNotAvailableForRentException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            "The requested property is not available for rent! "
+            "It may be already rented or reserved! "
+        )
