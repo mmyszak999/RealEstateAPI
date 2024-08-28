@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import Optional
 
 from src.apps.properties.schemas import PropertyInputSchema, PropertyUpdateSchema
+from src.apps.properties.enums import PropertyTypeEnum, PropertyStatusEnum
 from src.core.factory.core import SchemaFactory
 from src.core.utils.faker import (
     set_random_property_status,
@@ -23,8 +24,8 @@ class PropertyInputSchemaFactory(SchemaFactory):
 
     def generate(
         self,
-        property_status: str = None,
-        property_type: str = None,
+        property_status: PropertyStatusEnum = None,
+        property_type: PropertyTypeEnum = None,
         short_description: str = None,
         square_meter: Decimal = None,
         rooms_amount: Optional[int] = None,
@@ -52,13 +53,13 @@ class PropertyUpdateSchemaFactory(SchemaFactory):
 
     def generate(
         self,
-        property_type: PropertyTypeEnum = None,
-        property_status: PropertyStatusEnum = None,
-        short_description: str = None,
-        square_meter: Decimal = None,
+        property_type: Optional[PropertyTypeEnum] = None,
+        property_status: Optional[PropertyStatusEnum] = None,
+        short_description: Optional[str] = None,
+        square_meter: Optional[Decimal] = None,
         rooms_amount: Optional[int] = None,
         description: Optional[str]  = None,
-        property_value: Decimal = None
+        property_value: Optional[Decimal] = None
     ):
         return self.schema_class(
             property_status=property_status,

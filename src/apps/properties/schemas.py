@@ -32,13 +32,13 @@ class PropertyInputSchema(PropertyBaseSchema):
 
 
 class PropertyUpdateSchema(BaseModel):
-    property_type: Optional[str]
+    property_type: Optional[PropertyTypeEnum]
     short_description: Optional[str]
     description: Optional[str]
     property_value: Optional[Decimal]
     square_meter: Optional[Decimal]
     rooms_amount: Optional[Decimal]
-    property_status: Optional[str]
+    property_status: Optional[PropertyStatusEnum]
 
     class Config:
         orm_mode = True

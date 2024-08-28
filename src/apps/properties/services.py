@@ -36,6 +36,9 @@ async def create_property(
     if owner_id := property_data.get("owner_id"):
         if not (owner_object := await if_exists(User, "id", owner_id, session)):
             raise DoesNotExist(User.__name__, "id", owner_id)
+        
+        if not owner_object.is_active:
+            raise ServiceException("Inactive user cannot be assigned as a property owner! ")
     
     property_status = property_data.get('property_status', "").value
     if property_status and (property_status not in PropertyStatusEnum.list_values()):
@@ -44,7 +47,6 @@ async def create_property(
         )
         
     property_type = property_data.get('property_type', "").value
-    
     if property_type and (property_type not in PropertyTypeEnum.list_values()):
         raise IncorrectEnumValueException(
             "property_type", property_type, PropertyTypeEnum.list_values()
