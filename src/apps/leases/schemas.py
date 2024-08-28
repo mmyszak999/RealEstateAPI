@@ -14,7 +14,7 @@ class LeaseBaseSchema(BaseModel):
     start_date: datetime.date
     end_date: Optional[datetime.date]
     rent_amount: Decimal = Field(ge=0)
-    inital_deposit_amount: Optional[Decimal] = Field(ge=0)
+    initial_deposit_amount: Optional[Decimal] = Field(ge=0)
     billing_period: BillingPeriodEnum
     payment_bank_account: str
 
@@ -34,7 +34,7 @@ class LeaseInputSchema(LeaseBaseSchema):
 class LeaseUpdateSchema(BaseModel):
     rent_amount: Optional[Decimal] = Field(ge=0)
     payment_bank_account: Optional[str]
-    inital_deposit_amount: Optional[Decimal] = Field(ge=0)
+    initial_deposit_amount: Optional[Decimal] = Field(ge=0)
 
     class Config:
         orm_mode = True

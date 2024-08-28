@@ -30,7 +30,9 @@ from src.core.exceptions import (
     IncorrectCompanyOrPropertyValueException,
     UserHasNoCompanyException,
     AddressAlreadyAssignedException,
-    PropertyNotAvailableForRentException
+    PropertyNotAvailableForRentException,
+    UserCannotLeaseNotTheirPropertyException,
+    ActiveLeaseException
 )
 
 app = FastAPI(
@@ -234,6 +236,22 @@ async def address_already_assigned_exception(
 @app.exception_handler(PropertyNotAvailableForRentException)
 async def property_not_available_for_rent_exception(
     request: Request, exception: PropertyNotAvailableForRentException
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
+    )
+
+@app.exception_handler(UserCannotLeaseNotTheirPropertyException)
+async def user_cannot_lease_not_their_property_exception(
+    request: Request, exception: UserCannotLeaseNotTheirPropertyException
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
+    )
+
+@app.exception_handler(ActiveLeaseException)
+async def active_lease_exception(
+    request: Request, exception: ActiveLeaseException
 ) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}

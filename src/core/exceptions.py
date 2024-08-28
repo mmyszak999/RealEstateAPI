@@ -127,3 +127,17 @@ class PropertyNotAvailableForRentException(ServiceException):
             "The requested property is not available for rent! "
             "It may be already rented or reserved! "
         )
+
+class UserCannotLeaseNotTheirPropertyException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            "Cannot create lease details for requested owner because that user is not a property owner"
+        )
+
+
+class ActiveLeaseException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            "New lease details cannot be created "
+            "as the property still has the active lease or has the renewal accepted ! "
+        )

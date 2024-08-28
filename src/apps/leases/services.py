@@ -21,7 +21,9 @@ from src.core.exceptions import (
     IsOccupied, 
     IncorrectEnumValueException,
     ServiceException,
-    PropertyNotAvailableForRentException
+    PropertyNotAvailableForRentException,
+    UserCannotLeaseNotTheirPropertyException,
+    ActiveLeaseException
 )
 from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
@@ -45,21 +47,32 @@ async def create_lease(
         if not (owner_object := await if_exists(User, "id", owner_id, session)):
             raise DoesNotExist(User.__name__, "id", owner_id)
         
+        if property_object.owner_id != owner_id:
+            raise UserCannotLeaseNotTheirPropertyException
+        
         if not owner_object.is_active:
             raise ServiceException("Inactive user cannot be assigned as a lease owner! ")
-        
-        if not owner_object
     
-    lease_status = lease_data.get('lease_status', "").value
-    if lease_status and (lease_status not in LeaseStatusEnum.list_values()):
-        raise IncorrectEnumValueException(
-            "lease_status", lease_status, LeaseStatusEnum.list_values()
+    
+    if tenant_id := lease_data.get("tenant_id"):
+        if not (tenant_object := await if_exists(User, "id", owner_id, session)):
+            raise DoesNotExist(User.__name__, "id", owner_id)
+    
+    statement = select(Lease
+            ).where(
+                Lease.property_id == property_id,
+                Lease.lease_expired == False,
+                Lease.renewal_accepted == True
         )
-        
-    lease_type = lease_data.get('lease_type', "").value
-    if lease_type and (lease_type not in LeaseTypeEnum.list_values()):
+    active_property_lease_check = await session.scalars(statement)
+    
+    if active_property_lease_check:
+        raise ActiveLeaseException
+    
+    billing_period = lease_data.get('billing_period', "").value
+    if billing_period and (billing_period not in BillingPeriodEnum.list_values()):
         raise IncorrectEnumValueException(
-            "lease_type", lease_type, LeaseTypeEnum.list_values()
+            "billing_period", billing_period, BillingPeriodEnum.list_values()
         )
 
     new_lease = Lease(**lease_data)
@@ -84,17 +97,17 @@ async def get_single_lease(
 async def get_all_leases(
     session: AsyncSession,
     page_params: PageParams,
-    get_available: bool = False,
-    get_rented: bool = False,
+    get_with_renewal_accepted: bool = False,
+    get_expired: bool = False,
     output_schema: BaseModel = LeaseBasicOutputSchema,
     query_params: list[tuple] = None
 ) -> PagedResponseSchema[LeaseBasicOutputSchema]:
     query = select(Lease)
-    if get_available:
-        query = query.filter(Lease.lease_status == LeaseStatusEnum.AVAILABLE)
+    if get_with_renewal_accepted:
+        query = query.filter(Lease.renewal_accepted == True)
         
-    if get_rented:
-        query = query.filter(Lease.lease_status == LeaseStatusEnum.RENTED)
+    if get_expired:
+        query = query.filter(Lease.lease_expired == True)
 
     if query_params:
         query = filter_and_sort_instances(query_params, query, Lease)
@@ -142,7 +155,7 @@ async def update_single_lease(
     return await get_single_lease(session, lease_id=lease_id)
 
 
-async def change_lease_owner(
+"""async def change_lease_owner(
     session: AsyncSession, lease_input: LeaseOwnerIdSchema, lease_id: str
 ) -> None:
     if not (lease_object := await if_exists(Lease, "id", lease_id, session)):
@@ -168,3 +181,4 @@ async def change_lease_owner(
     await session.commit()
     await session.refresh(lease_object)
     return
+"""

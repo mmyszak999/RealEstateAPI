@@ -25,7 +25,7 @@ class Lease(Base):
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=True)
     rent_amount = Column(DECIMAL, nullable=False)
-    inital_deposit_amount = Column(DECIMAL, nullable=True, default=Decimal(0))
+    initial_deposit_amount = Column(DECIMAL, nullable=True, default=Decimal(0))
     renewal_accepted = Column(Boolean, nullable=False, default=False)
     lease_expired = Column(Boolean, nullable=False, default=False)
     lease_expiration_date = Column(Date, nullable=True)
