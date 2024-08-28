@@ -33,6 +33,9 @@ from src.apps.users.models import User
 async def create_address(
     session: AsyncSession, address_input: AddressInputSchema
 ) -> AddressOutputSchema:
+    company_object = None
+    property_object = None
+
     address_data = address_input.dict()
 
     company_id = address_data.get("company_id")
@@ -40,23 +43,19 @@ async def create_address(
 
     if bool(company_id) == bool(property_id):
         raise IncorrectCompanyOrPropertyValueException
-    
-    if company_id and (not (company_object := await if_exists(Company, "id", company_id, session))):
-        raise DoesNotExist(Company.__name__, "id", company_id)
 
-        if company_object.address:
+    if company_id:
+        if not (company_object := await if_exists(Company, "id", company_id, session)):
+            raise DoesNotExist(Company.__name__, "id", company_id)
+        if company_object.address is not None:
             raise AddressAlreadyAssignedException(object="Company")
-    
-    if property_id and (not (property_object := await if_exists(Property, "id", property_id, session))):
-        raise DoesNotExist(Property.__name__, "id", property_id)
 
-        if property_object.address:
+    if property_id:
+        if not (property_object := await if_exists(Property, "id", property_id, session)):
+            raise DoesNotExist(Property.__name__, "id", property_id)
+        if property_object and property_object.address is not None:
             raise AddressAlreadyAssignedException(object="Property")
-    
-    
-    
-        
-
+ 
     new_address = Address(**address_data)
     new_address.company_id = company_id
     new_address.property_id = property_id
@@ -114,31 +113,3 @@ async def update_single_address(
         await session.refresh(address_object)
 
     return await get_single_address(session, address_id=address_id, output_schema=AddressBasicOutputSchema)
-
-
-"""
-async def add_single_user_to_address(
-    session: AsyncSession, user_address_schema: UserIdSchema, address_id: str
-) -> AddressOutputSchema:
-    if not (address_object := await if_exists(Address, "id", address_id, session)):
-        raise DoesNotExist(Address.__name__, "id", address_id)
-    
-    user_id = user_address_schema.id
-    if not (user_object := await if_exists(User, "id", user_id, session)):
-        raise DoesNotExist(User.__name__, "id", user_id)
-    
-    if user_object.address:
-        raise UserAlreadyHasAddressException
-    
-    if not user_object.is_active:
-        raise ServiceException("Inactive user cannot be added to the address! ")
-    
-    user_object.address_id = address_id
-    session.add(user_object)
-    await session.commit()
-    return"""
-    
-    
-        
-    
-    

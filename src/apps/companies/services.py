@@ -58,7 +58,8 @@ async def get_single_company(
 
 
 async def get_all_companies(
-    session: AsyncSession, page_params: PageParams, query_params: list[tuple] = None
+    session: AsyncSession, page_params: PageParams,
+    output_schema: BaseModel = CompanyBasicOutputSchema, query_params: list[tuple] = None
 ) -> PagedResponseSchema[CompanyBasicOutputSchema]:
     query = select(Company)
 
@@ -67,7 +68,7 @@ async def get_all_companies(
 
     return await paginate(
         query=query,
-        response_schema=CompanyBasicOutputSchema,
+        response_schema=output_schema,
         table=Company,
         page_params=page_params,
         session=session,

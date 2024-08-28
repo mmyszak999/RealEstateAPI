@@ -78,7 +78,7 @@ async def test_staff_and_authenticated_user_can_get_all_companies(
     response = await async_client.get("companies/", headers=user_headers)
 
     assert response.status_code == status_code
-    assert response.json()["total"] == 2
+    assert response.json()["total"] == 3
 
 
 @pytest.mark.parametrize(

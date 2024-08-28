@@ -21,8 +21,10 @@ from tests.test_companies.conftest import db_companies
 from tests.test_properties.conftest import db_properties
 
 DB_COMPANIES_ADDRESSES_SCHEMAS = [AddressInputSchemaFactory().generate() for _ in range(2)]
-DB_PROPERTIES_ADDRESSES_SCHEMAS = [AddressInputSchemaFactory().generate() for _ in range(4)]
-
+DB_PROPERTIES_ADDRESSES_SCHEMAS = [AddressInputSchemaFactory().generate() for _ in range(3)]
+"""
+    every company and property got address except for the last one
+"""
 
 @pytest_asyncio.fixture
 async def db_addresses(
@@ -30,11 +32,11 @@ async def db_addresses(
     db_companies: PagedResponseSchema[CompanyOutputSchema],
     db_properties: PagedResponseSchema[PropertyOutputSchema]
 ) -> PagedResponseSchema[AddressOutputSchema]:
-    for address_input, company in zip(DB_COMPANIES_ADDRESSES_SCHEMAS, db_companies.results):
+    for address_input, company in zip(DB_COMPANIES_ADDRESSES_SCHEMAS, db_companies.results[:-1]):
         address_input.company_id = company.id
         await create_address(async_session, address_input)
         
-    for address_input, property in zip(DB_PROPERTIES_ADDRESSES_SCHEMAS, db_properties.results):
+    for address_input, property in zip(DB_PROPERTIES_ADDRESSES_SCHEMAS, db_properties.results[:-1]):
         address_input.property_id = property.id
         await create_address(async_session, address_input)
         
