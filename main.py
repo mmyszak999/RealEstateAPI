@@ -9,6 +9,7 @@ from src.apps.jwt.routers import jwt_router
 from src.apps.properties.routers import property_router
 from src.apps.companies.routers import company_router
 from src.apps.addresses.routers import address_router
+from src.apps.leases.routers import lease_router
 from src.core.exceptions import (
     AccountAlreadyActivatedException,
     AccountAlreadyDeactivatedException,
@@ -32,7 +33,11 @@ from src.core.exceptions import (
     AddressAlreadyAssignedException,
     PropertyNotAvailableForRentException,
     UserCannotLeaseNotTheirPropertyException,
-    ActiveLeaseException
+    ActiveLeaseException,
+    IncorrectLeaseDatesException,
+    CantModifyExpiredLeaseException,
+    TenantAlreadyAcceptedRenewalException,
+    TenantAlreadyDiscardedRenewalException
 )
 
 app = FastAPI(
@@ -48,6 +53,7 @@ root_router.include_router(jwt_router)
 root_router.include_router(property_router)
 root_router.include_router(company_router)
 root_router.include_router(address_router)
+root_router.include_router(lease_router)
 
 app.include_router(root_router)
 
@@ -256,3 +262,37 @@ async def active_lease_exception(
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
+
+@app.exception_handler(IncorrectLeaseDatesException)
+async def incorrect_lease_dates_exception(
+    request: Request, exception: IncorrectLeaseDatesException
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
+    )
+
+@app.exception_handler(CantModifyExpiredLeaseException)
+async def cant_modify_expired_lease_exception(
+    request: Request, exception: CantModifyExpiredLeaseException
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
+    )
+
+@app.exception_handler(TenantAlreadyAcceptedRenewalException)
+async def tenant_already_accepted_renewal_exception(
+    request: Request, exception: TenantAlreadyAcceptedRenewalException
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
+    )
+
+@app.exception_handler(TenantAlreadyDiscardedRenewalException)
+async def tenant_already_discarded_renewal_exception(
+    request: Request, exception: TenantAlreadyDiscardedRenewalException
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
+    )
+    
+

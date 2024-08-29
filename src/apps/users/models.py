@@ -6,6 +6,7 @@ from sqlalchemy.sql.sqltypes import DateTime
 
 from src.core.utils.utils import generate_uuid
 from src.database.db_connection import Base
+from src.apps.leases.models import Lease
 
 
 class User(Base):
@@ -35,5 +36,5 @@ class User(Base):
         nullable=True,
     )
     company = relationship("Company", back_populates="users", lazy="joined")
-    owner_leases = relationship("Lease", back_populates="owner", lazy="joined")
-    tenant_leases = relationship("Lease", back_populates="tenant", lazy="joined")
+    owner_leases = relationship("Lease", back_populates="owner", lazy="joined", foreign_keys="Lease.owner_id")
+    tenant_leases = relationship("Lease", back_populates="tenant", lazy="joined", foreign_keys="Lease.tenant_id")

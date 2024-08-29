@@ -1,5 +1,6 @@
 from decimal import Decimal
 from typing import Any
+from datetime import date
 
 
 class ServiceException(Exception):
@@ -141,3 +142,32 @@ class ActiveLeaseException(ServiceException):
             "New lease details cannot be created "
             "as the property still has the active lease or has the renewal accepted ! "
         )
+
+class IncorrectLeaseDatesException(ServiceException):
+    def __init__(self, end_date: date, start_date: date) -> None:
+        super().__init__(
+            f"Lease end date ({end_date}) earlier than lease start date ({start_date}) ! "
+        )
+
+
+class CantModifyExpiredLeaseException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            "Expired lease cannot be modified after the expiration date! "
+        )
+        
+
+
+class TenantAlreadyAcceptedRenewalException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            "Tenant already accepted the lease renewal! "
+        )
+        
+class TenantAlreadyDiscardedRenewalException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            "Tenant already discarded the lease renewal! "
+        )
+
+
