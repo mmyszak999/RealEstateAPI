@@ -38,13 +38,6 @@ class LeaseInputSchema(LeaseBaseSchema):
     owner_id: str
     tenant_id: str
     property_id: str
-    lease_expiration_date: Optional[datetime.date]
-    
-    @validator("lease_expiration_date")
-    def validate_lease_expiration_date(cls, lease_expiration_date: Optional[datetime.date]) -> Optional[datetime.date]:
-        if lease_expiration_date and (lease_expiration_date < datetime.date.today()):
-            raise ValueError("Lease expiration date must be in the future! ")
-        return lease_expiration_date
 
     class Config:
         orm_mode = True
@@ -56,6 +49,12 @@ class LeaseUpdateSchema(BaseModel):
     initial_deposit_amount: Optional[Decimal] = Field(ge=0)
     lease_expiration_date: Optional[datetime.date]
 
+    @validator("lease_expiration_date")
+    def validate_lease_expiration_date(cls, lease_expiration_date: Optional[datetime.date]) -> Optional[datetime.date]:
+        if lease_expiration_date and (lease_expiration_date < datetime.date.today()):
+            raise ValueError("Lease expiration date must be in the future! ")
+        return lease_expiration_date
+    
     class Config:
         orm_mode = True
 

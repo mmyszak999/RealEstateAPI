@@ -72,6 +72,7 @@ async def get_active_leases(
     page_params: PageParams = Depends(),
     request_user: User = Depends(authenticate_user),
 ) -> PagedResponseSchema[LeaseBasicOutputSchema]:
+    await check_if_staff(request_user)
     return await get_all_leases(
         session, page_params, get_active=True,
         query_params=request.query_params.multi_items(),
@@ -137,12 +138,11 @@ async def update_lease(
     return await update_single_lease(session, lease_input, lease_id)
 
 
-
 @lease_router.patch(
     "/{lease_id}/accept-renewal",
     status_code=status.HTTP_200_OK,
 )
-async def change_single_lease_owner(
+async def accept_lease_renewal(
     lease_id: str,
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
@@ -165,7 +165,7 @@ async def change_single_lease_owner(
     "/{lease_id}/discard-renewal",
     status_code=status.HTTP_200_OK,
 )
-async def change_single_lease_owner(
+async def discard_lease_renewal(
     lease_id: str,
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),

@@ -224,7 +224,7 @@ async def base_manage_lease_renewals_and_expired_statuses(
 ) -> None:
     lease.lease_expired = True
     if lease.renewal_accepted:
-        lease_input = LeaseInputSchema.from_orm(lease)   
+        lease_input = LeaseInputSchema.from_orm(lease)
         old_start_date = lease_input.start_date
         old_end_date = lease_input.end_date
 

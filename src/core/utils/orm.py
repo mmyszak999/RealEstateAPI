@@ -25,7 +25,3 @@ def default_next_payment_date(context):
         return start_date + timedelta(days=30)
     if billing_period == BillingPeriodEnum.YEARLY:
         return start_date + timedelta(days=365)
-    
-"""def default_available_stock_weight(context):
-    return context.get_current_parameters()["max_weight"]"""
-
