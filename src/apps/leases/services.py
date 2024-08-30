@@ -28,7 +28,8 @@ from src.core.exceptions import (
     IncorrectLeaseDatesException,
     CantModifyExpiredLeaseException,
     TenantAlreadyAcceptedRenewalException,
-    TenantAlreadyDiscardedRenewalException
+    TenantAlreadyDiscardedRenewalException,
+    PropertyWithoutOwnerException
 )
 from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
@@ -44,6 +45,9 @@ async def create_lease(
     if property_id := lease_data.get("property_id"):
         if not (property_object := await if_exists(Property, "id", property_id, session)):
             raise DoesNotExist(Property.__name__, "id", property_id)
+        
+        if not property_object.owner:
+            raise PropertyWithoutOwnerException
         
         if property_object.property_status != PropertyStatusEnum.AVAILABLE:
             raise PropertyNotAvailableForRentException
@@ -62,6 +66,9 @@ async def create_lease(
     if tenant_id := lease_data.get("tenant_id"):
         if not (tenant_object := await if_exists(User, "id", tenant_id, session)):
             raise DoesNotExist(User.__name__, "id", tenant_id)
+        
+        if tenant_id == owner_id:
+            raise ServiceException("Tenant id and owner id have to be different! ")
         
         if not tenant_object.is_active:
             raise ServiceException("Inactive user cannot be assigned as a tenant! ")

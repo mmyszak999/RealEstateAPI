@@ -171,3 +171,8 @@ class TenantAlreadyDiscardedRenewalException(ServiceException):
         )
 
 
+class PropertyWithoutOwnerException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            "Property with no owner assigned cannot be rented! "
+        )

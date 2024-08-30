@@ -37,7 +37,8 @@ from src.core.exceptions import (
     IncorrectLeaseDatesException,
     CantModifyExpiredLeaseException,
     TenantAlreadyAcceptedRenewalException,
-    TenantAlreadyDiscardedRenewalException
+    TenantAlreadyDiscardedRenewalException,
+    PropertyWithoutOwnerException
 )
 
 app = FastAPI(
@@ -290,6 +291,14 @@ async def tenant_already_accepted_renewal_exception(
 @app.exception_handler(TenantAlreadyDiscardedRenewalException)
 async def tenant_already_discarded_renewal_exception(
     request: Request, exception: TenantAlreadyDiscardedRenewalException
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
+    )
+
+@app.exception_handler(PropertyWithoutOwnerException)
+async def property_without_owner_exception(
+    request: Request, exception: PropertyWithoutOwnerException
 ) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
