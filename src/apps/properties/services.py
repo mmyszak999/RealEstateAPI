@@ -39,6 +39,7 @@ async def create_property(
         
         if not owner_object.is_active:
             raise ServiceException("Inactive user cannot be assigned as a property owner! ")
+        
     
     property_status = property_data.get('property_status', "").value
     if property_status and (property_status not in PropertyStatusEnum.list_values()):

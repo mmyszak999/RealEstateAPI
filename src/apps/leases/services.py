@@ -29,7 +29,8 @@ from src.core.exceptions import (
     CantModifyExpiredLeaseException,
     TenantAlreadyAcceptedRenewalException,
     TenantAlreadyDiscardedRenewalException,
-    PropertyWithoutOwnerException
+    PropertyWithoutOwnerException,
+    UserCannotRentTheirPropertyForThemselvesException
 )
 from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
@@ -67,8 +68,8 @@ async def create_lease(
         if not (tenant_object := await if_exists(User, "id", tenant_id, session)):
             raise DoesNotExist(User.__name__, "id", tenant_id)
         
-        if tenant_id == owner_id:
-            raise ServiceException("Tenant id and owner id have to be different! ")
+        if property_object.owner_id == tenant_id:
+            raise UserCannotRentTheirPropertyForThemselvesException
         
         if not tenant_object.is_active:
             raise ServiceException("Inactive user cannot be assigned as a tenant! ")
@@ -163,7 +164,7 @@ async def update_single_lease(
     end_date = lease_object.end_date or None
     
     if lease_expiration_date:
-        if lease_expiration_date < date.today() < lease_object.start_date:
+        if (lease_expiration_date < lease_object.start_date) or (lease_expiration_date < date.today()):
             raise ServiceException(
                 "Expiration date cannot be smaller than the lease start date and the current date! "
             )
@@ -219,7 +220,9 @@ async def discard_single_lease_renewal(
         session, lease_id, accept_renewal=False
     )
 
-
+"""
+for tasks
+"""
 
 async def base_manage_lease_renewals_and_expired_statuses(
     session: AsyncSession, lease: Lease
