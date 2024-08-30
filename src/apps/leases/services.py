@@ -99,6 +99,8 @@ async def create_lease(
     property_object.property_status = PropertyStatusEnum.RESERVED
     session.add(property_object)
     await session.commit()
+    await session.refresh(new_lease)
+    await session.refresh(property_object)
 
     return LeaseBasicOutputSchema.from_orm(new_lease)
 

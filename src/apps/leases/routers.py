@@ -119,7 +119,7 @@ async def get_lease(
         or getattr(request_user, "id") == lease.tenant_id
     ):
         return lease
-    return AuthorizationException("You don't have permissions to perform this action!" )
+    raise AuthorizationException("You don't have permissions to perform this action! ")
 
 
 @lease_router.patch(
@@ -158,7 +158,7 @@ async def accept_lease_renewal(
             status_code=status.HTTP_200_OK,
             content={"message": "The lease renewal has been accepted! "}
         )
-    return AuthorizationException("You don't have permissions to perform this action!" )
+    raise AuthorizationException("You don't have permissions to perform this action!" )
     
     
 @lease_router.patch(
@@ -181,5 +181,5 @@ async def discard_lease_renewal(
             status_code=status.HTTP_200_OK,
             content={"message": "The lease renewal has been discarded! "}
         )
-    return AuthorizationException("You don't have permissions to perform this action!" )
+    raise AuthorizationException("You don't have permissions to perform this action!" )
 
