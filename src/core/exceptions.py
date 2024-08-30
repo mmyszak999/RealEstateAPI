@@ -1,5 +1,6 @@
 from decimal import Decimal
 from typing import Any
+from datetime import date
 
 
 class ServiceException(Exception):
@@ -118,4 +119,60 @@ class AddressAlreadyAssignedException(ServiceException):
     def __init__(self, object: str) -> None:
         super().__init__(
             f"{object} already has address assigned! "
+        )
+        
+
+class PropertyNotAvailableForRentException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            "The requested property is not available for rent! "
+            "It may be already rented or reserved! "
+        )
+
+class UserCannotLeaseNotTheirPropertyException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            "Cannot create lease details for requested owner because that user is not a property owner"
+        )
+
+
+class ActiveLeaseException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            "New lease details cannot be created "
+            "as the property still has the active lease or has the renewal accepted ! "
+        )
+
+class IncorrectLeaseDatesException(ServiceException):
+    def __init__(self, end_date: date, start_date: date) -> None:
+        super().__init__(
+            f"Lease end date ({end_date}) earlier than lease start date ({start_date}) ! "
+        )
+
+
+class CantModifyExpiredLeaseException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            "Expired lease cannot be modified after the expiration date! "
+        )
+        
+
+
+class TenantAlreadyAcceptedRenewalException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            "Tenant already accepted the lease renewal! "
+        )
+        
+class TenantAlreadyDiscardedRenewalException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            "Tenant already discarded the lease renewal! "
+        )
+
+
+class PropertyWithoutOwnerException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            "Property with no owner assigned cannot be rented! "
         )

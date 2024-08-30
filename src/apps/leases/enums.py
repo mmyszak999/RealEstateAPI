@@ -1,11 +1,10 @@
 from src.core.utils.enums import BaseEnum
 
 
-class PropertyTypeEnum(BaseEnum):
-    HOUSE = "HOUSE"
-    APARTMENT = "APARTMENT"
-    COMMERCIAL = "COMMERCIAL"
-    LAND = "LAND"
+class BillingPeriodEnum(BaseEnum):
+    WEEKLY = "WEEKLY"
+    MONTHLY = "MONTHLY"
+    YEARLY = "YEARLY"
 
 
 class PropertyStatusEnum(BaseEnum):
