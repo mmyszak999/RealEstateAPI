@@ -79,6 +79,38 @@ async def get_active_leases(
     )
 
 @lease_router.get(
+    "/owner-leases",
+    response_model=PagedResponseSchema[LeaseBasicOutputSchema],
+    status_code=status.HTTP_200_OK,
+)
+async def get_user_owner_leases(
+    request: Request,
+    session: AsyncSession = Depends(get_db),
+    page_params: PageParams = Depends(),
+    request_user: User = Depends(authenticate_user),
+) -> PagedResponseSchema[LeaseBasicOutputSchema]:
+    return await get_all_leases(
+        session, page_params, user_id_owner_leases=request_user.id,
+        query_params=request.query_params.multi_items(),
+    )
+
+@lease_router.get(
+    "/tenant-leases",
+    response_model=PagedResponseSchema[LeaseBasicOutputSchema],
+    status_code=status.HTTP_200_OK,
+)
+async def get_user_tenant_leases(
+    request: Request,
+    session: AsyncSession = Depends(get_db),
+    page_params: PageParams = Depends(),
+    request_user: User = Depends(authenticate_user),
+) -> PagedResponseSchema[LeaseBasicOutputSchema]:
+    return await get_all_leases(
+        session, page_params, user_id_tenant_leases=request_user.id,
+        query_params=request.query_params.multi_items(),
+    )
+
+@lease_router.get(
     "/with-renewals",
     response_model=PagedResponseSchema[LeaseBasicOutputSchema],
     status_code=status.HTTP_200_OK,

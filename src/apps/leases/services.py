@@ -124,6 +124,8 @@ async def get_all_leases(
     get_with_renewal_accepted: bool = False,
     get_expired: bool = False,
     get_active: bool = False,
+    user_id_tenant_leases: str = None,
+    user_id_owner_leases: str = None,
     output_schema: BaseModel = LeaseBasicOutputSchema,
     query_params: list[tuple] = None
 ) -> PagedResponseSchema[LeaseBasicOutputSchema]:
@@ -136,6 +138,12 @@ async def get_all_leases(
         
     if get_active:
         query = query.filter(Lease.lease_expired == False)
+        
+    if user_id_owner_leases:
+        query = query.filter(Lease.owner_id == user_id_owner_leases)
+        
+    if user_id_tenant_leases:
+        query = query.filter(Lease.tenant_id == user_id_tenant_leases)
 
     if query_params:
         query = filter_and_sort_instances(query_params, query, Lease)
