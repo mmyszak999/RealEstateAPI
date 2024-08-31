@@ -1,6 +1,7 @@
 from typing import Union
 from datetime import date, datetime, timedelta
 
+from fastapi import BackgroundTasks
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
@@ -15,6 +16,7 @@ from src.apps.leases.schemas import (
 )
 from src.apps.properties.models import Property
 from src.apps.properties.enums import PropertyStatusEnum
+from src.apps.payments.services import create_payment
 from src.apps.users.models import User
 from src.apps.leases.enums import BillingPeriodEnum
 from src.core.exceptions import (
@@ -303,17 +305,18 @@ async def manage_property_statuses_for_lease_with_the_start_date_being_today(
     await session.commit()
 
 
+async def manage_leases_with_incoming_payment_date(
+    session: AsyncSession, background_tasks: BackgroundTasks
+) -> None:
+    statement = select(Lease).filter(
+        Lease.lease_expired == False,
+        Lease.next_payment_date == date.today()
+    )
+    leases_with_imcoming_payments = await session.scalars(statement)
+    leases_with_imcoming_payments = leases_with_the_first_day.unique().all()
+    [
+        await create_payment(session, lease, background_tasks)
+        for lease in leases_with_imcoming_payments
+    ]
+    await session.commit()
 
-"""
-task który będzie sprawdzał lease gdzie lease_expired=False
-    jak lease expired == False a expiration date większa niż date.today()
-    to wtedy daje lease_expired=True
-    ponadto patrzę czy jest renewal_accepted=True
-    jak tak to tworzę lease na tych samych warunkach
-    ale modyfikuje start date i end date
-    jak nie to wtedy daję property_status na available
-    
-jak jest tworzone lease, to property jest RESERVED,
-jak nastepuje start date to wtedy jest RENTED
-potem jak wygasa umowa to staje sie AVAILABLE
-"""

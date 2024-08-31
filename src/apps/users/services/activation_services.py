@@ -1,7 +1,5 @@
 from typing import Any
 
-from fastapi import BackgroundTasks
-from fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession

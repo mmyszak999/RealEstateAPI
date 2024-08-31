@@ -5,7 +5,6 @@ from fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import load_only
 
 from src.apps.emails.services import send_activation_email
 from src.apps.jwt.schemas import AccessTokenOutputSchema
