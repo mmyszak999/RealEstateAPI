@@ -17,9 +17,7 @@ passwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 async def run():
     try:
-        # Logowanie wyboru bazy danych
         db_name = "${TEST_MYSQL_DB}" if "$1" == "test" else "${MYSQL_DB}"
-        print(f"Connecting to database: {db_name}")
         
         connection = await asyncmy.connect(
             database=db_name,
