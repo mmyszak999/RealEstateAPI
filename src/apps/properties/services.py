@@ -39,6 +39,7 @@ async def create_property(
         
         if not owner_object.is_active:
             raise ServiceException("Inactive user cannot be assigned as a property owner! ")
+        
     
     property_status = property_data.get('property_status', "").value
     if property_status and (property_status not in PropertyStatusEnum.list_values()):
@@ -76,6 +77,7 @@ async def get_all_properties(
     page_params: PageParams,
     get_available: bool = False,
     get_rented: bool = False,
+    owner_id: str = None,
     output_schema: BaseModel = PropertyBasicOutputSchema,
     query_params: list[tuple] = None
 ) -> PagedResponseSchema[PropertyBasicOutputSchema]:
@@ -86,6 +88,9 @@ async def get_all_properties(
     if get_rented:
         query = query.filter(Property.property_status == PropertyStatusEnum.RENTED)
 
+    if owner_id:
+        query = query.filter(Property.owner_id == owner_id)
+    
     if query_params:
         query = filter_and_sort_instances(query_params, query, Property)
 

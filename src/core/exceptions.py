@@ -176,3 +176,9 @@ class PropertyWithoutOwnerException(ServiceException):
         super().__init__(
             "Property with no owner assigned cannot be rented! "
         )
+
+class UserCannotRentTheirPropertyForThemselvesException(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            "Property owner cannot rent the property for themselves ! "
+        )

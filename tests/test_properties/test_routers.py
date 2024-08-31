@@ -74,11 +74,41 @@ async def test_authenticated_user_can_get_available_properties(
     user: UserOutputSchema,
     user_headers: dict[str, str],
     status_code: int,
+    db_superuser: UserOutputSchema
 ):
     response = await async_client.get("properties/", headers=user_headers)
 
     assert response.status_code == status_code
-    assert response.json()["total"] == 3
+    assert response.json()["total"] == 2
+
+
+@pytest.mark.parametrize(
+    "user, user_headers, status_code",
+    [
+        (
+            pytest.lazy_fixture("db_user"),
+            pytest.lazy_fixture("auth_headers"),
+            status.HTTP_200_OK,
+        ),
+        (
+            pytest.lazy_fixture("db_staff_user"),
+            pytest.lazy_fixture("staff_auth_headers"),
+            status.HTTP_200_OK,
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_authenticated_user_can_get_their_properties(
+    async_client: AsyncClient,
+    db_properties: PagedResponseSchema[PropertyOutputSchema],
+    user: UserOutputSchema,
+    user_headers: dict[str, str],
+    status_code: int,
+    db_superuser: UserOutputSchema
+):
+    response = await async_client.get("properties/my-properties", headers=user_headers)
+
+    assert response.status_code == status_code
 
 
 @pytest.mark.parametrize(

@@ -38,8 +38,10 @@ from src.core.exceptions import (
     CantModifyExpiredLeaseException,
     TenantAlreadyAcceptedRenewalException,
     TenantAlreadyDiscardedRenewalException,
-    PropertyWithoutOwnerException
+    PropertyWithoutOwnerException,
+    UserCannotRentTheirPropertyForThemselvesException
 )
+from src.core.tasks import scheduler
 
 app = FastAPI(
     title="RealEstateAPI", description="Real Estate API", version="1.0"
@@ -303,5 +305,12 @@ async def property_without_owner_exception(
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
-    
+
+@app.exception_handler(UserCannotRentTheirPropertyForThemselvesException)
+async def user_cannot_rent_their_property_for_themselves_exception(
+    request: Request, exception: UserCannotRentTheirPropertyForThemselvesException
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
+    )
 

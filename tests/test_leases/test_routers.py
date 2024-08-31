@@ -3,18 +3,29 @@ from fastapi import status
 from fastapi_jwt_auth import AuthJWT
 from httpx import AsyncClient, Response
 
-from src.apps.users.schemas import UserLoginInputSchema, UserOutputSchema
-from src.core.factory.user_factory import (
-    UserRegisterSchemaFactory,
-    UserUpdateSchemaFactory,
+from src.apps.users.schemas import UserOutputSchema, UserIdSchema
+from src.apps.leases.schemas import LeaseOutputSchema
+from src.core.factory.lease_factory import (
+    LeaseInputSchemaFactory,
+    LeaseUpdateSchemaFactory,
 )
+from src.apps.leases.services import get_all_leases
 from tests.test_users.conftest import (
     DB_USER_SCHEMA,
     auth_headers,
     db_staff_user,
     db_user,
+    db_superuser,
     staff_auth_headers,
+    superuser_auth_headers
 )
+from tests.test_leases.conftest import db_leases
+from tests.test_addresses.conftest import db_addresses
+from tests.test_companies.conftest import db_companies
+from tests.test_properties.conftest import db_properties
+from src.core.pagination.schemas import PagedResponseSchema
+from src.apps.leases.schemas import LeaseOutputSchema
+from src.apps.properties.schemas import PropertyOutputSchema
 
 
 @pytest.mark.parametrize(
@@ -23,42 +34,213 @@ from tests.test_users.conftest import (
         (
             pytest.lazy_fixture("db_user"),
             pytest.lazy_fixture("auth_headers"),
-            status.HTTP_201_CREATED,
+            status.HTTP_403_FORBIDDEN,
         ),
         (
             pytest.lazy_fixture("db_staff_user"),
             pytest.lazy_fixture("staff_auth_headers"),
             status.HTTP_201_CREATED,
         ),
-        (None, None, status.HTTP_201_CREATED),
     ],
 )
 @pytest.mark.asyncio
-async def test_every_user_can_create_new_account(
+async def test_only_staff_user_can_create_lease(
     async_client: AsyncClient,
-    user_headers: dict[str, str],
+    db_superuser: UserOutputSchema,
     user: UserOutputSchema,
-    status_code: int
+    user_headers: dict[str, str],
+    status_code: int,
+    db_properties: PagedResponseSchema[PropertyOutputSchema]
 ):
-    user_input_data = UserRegisterSchemaFactory().generate()
+    available_property = [
+        property for property in db_properties.results if property.owner_id == db_superuser.id
+    ][0]
+    lease_data = LeaseInputSchemaFactory().generate(
+        property_id=available_property.id,
+        owner_id=db_superuser.id,
+        tenant_id=user.id
+    )
     response = await async_client.post(
-        "users/create", content=user_input_data.json(), headers=user_headers
+        "leases/", headers=user_headers, content=lease_data.json()
+    )
+
+    assert response.status_code == status_code
+
+
+@pytest.mark.parametrize(
+    "user, user_headers, status_code",
+    [
+        (
+            pytest.lazy_fixture("db_user"),
+            pytest.lazy_fixture("auth_headers"),
+            status.HTTP_403_FORBIDDEN,
+        ),
+        (
+            pytest.lazy_fixture("db_staff_user"),
+            pytest.lazy_fixture("staff_auth_headers"),
+            status.HTTP_200_OK,
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_only_staff_user_can_get_active_leases(
+    async_client: AsyncClient,
+    db_leases: PagedResponseSchema[LeaseOutputSchema],
+    user: UserOutputSchema,
+    user_headers: dict[str, str],
+    status_code: int,
+):
+    response = await async_client.get("leases/", headers=user_headers)
+
+    assert response.status_code == status_code
+
+
+@pytest.mark.parametrize(
+    "user, user_headers, status_code",
+    [
+        (
+            pytest.lazy_fixture("db_user"),
+            pytest.lazy_fixture("auth_headers"),
+            status.HTTP_403_FORBIDDEN,
+        ),
+        (
+            pytest.lazy_fixture("db_staff_user"),
+            pytest.lazy_fixture("staff_auth_headers"),
+            status.HTTP_200_OK,
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_only_staff_user_can_get_all_leases(
+    async_client: AsyncClient,
+    db_leases: PagedResponseSchema[LeaseOutputSchema],
+    user: UserOutputSchema,
+    user_headers: dict[str, str],
+    status_code: int,
+):
+    response = await async_client.get("leases/all", headers=user_headers)
+
+    assert response.status_code == status_code
+
+
+
+@pytest.mark.parametrize(
+    "user, user_headers, status_code",
+    [
+        (
+            pytest.lazy_fixture("db_user"),
+            pytest.lazy_fixture("auth_headers"),
+            status.HTTP_200_OK,
+        ),
+        (
+            pytest.lazy_fixture("db_staff_user"),
+            pytest.lazy_fixture("staff_auth_headers"),
+            status.HTTP_200_OK,
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_authenticated_user_can_get_their_owner_leases(
+    async_client: AsyncClient,
+    db_leases: PagedResponseSchema[LeaseOutputSchema],
+    user: UserOutputSchema,
+    user_headers: dict[str, str],
+    status_code: int,
+):
+    response = await async_client.get("leases/owner-leases", headers=user_headers)
+
+    assert response.status_code == status_code
+
+
+
+@pytest.mark.parametrize(
+    "user, user_headers, status_code",
+    [
+        (
+            pytest.lazy_fixture("db_user"),
+            pytest.lazy_fixture("auth_headers"),
+            status.HTTP_200_OK,
+        ),
+        (
+            pytest.lazy_fixture("db_staff_user"),
+            pytest.lazy_fixture("staff_auth_headers"),
+            status.HTTP_200_OK,
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_authenticated_user_can_get_their_tenant_leases(
+    async_client: AsyncClient,
+    db_leases: PagedResponseSchema[LeaseOutputSchema],
+    user: UserOutputSchema,
+    user_headers: dict[str, str],
+    status_code: int,
+):
+    response = await async_client.get("leases/tenant-leases", headers=user_headers)
+
+    assert response.status_code == status_code
+
+
+@pytest.mark.parametrize(
+    "user, user_headers, status_code",
+    [
+        (
+            pytest.lazy_fixture("db_user"),
+            pytest.lazy_fixture("auth_headers"),
+            status.HTTP_403_FORBIDDEN,
+        ),
+        (
+            pytest.lazy_fixture("db_staff_user"),
+            pytest.lazy_fixture("staff_auth_headers"),
+            status.HTTP_200_OK,
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_only_staff_user_can_get_leases_with_renewals_accepted(
+    async_client: AsyncClient,
+    db_leases: PagedResponseSchema[LeaseOutputSchema],
+    user: UserOutputSchema,
+    user_headers: dict[str, str],
+    status_code: int,
+):
+    response = await async_client.get("leases/with-renewals", headers=user_headers)
+
+    assert response.status_code == status_code
+
+
+@pytest.mark.parametrize(
+    "user, user_headers, status_code",
+    [
+        (
+            pytest.lazy_fixture("db_user"),
+            pytest.lazy_fixture("auth_headers"),
+            status.HTTP_403_FORBIDDEN,
+        ),
+        (
+            pytest.lazy_fixture("db_staff_user"),
+            pytest.lazy_fixture("staff_auth_headers"),
+            status.HTTP_200_OK,
+        ),
+        (
+            pytest.lazy_fixture("db_superuser"),
+            pytest.lazy_fixture("superuser_auth_headers"),
+            status.HTTP_200_OK,
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_only_owner_or_tenant_can_get_their_single_lease(
+    async_client: AsyncClient,
+    db_leases: PagedResponseSchema[LeaseOutputSchema],
+    user: UserOutputSchema,
+    user_headers: dict[str, str],
+    status_code: int,
+):
+    response = await async_client.get(
+        f"leases/{db_leases.results[0].id}", headers=user_headers
     )
     assert response.status_code == status_code
-    assert response.json()["email"] == user_input_data.email
-
-
-
-@pytest.mark.asyncio
-async def test_if_user_was_logged_correctly(
-    async_client: AsyncClient, db_user: UserOutputSchema
-):
-    login_data = UserLoginInputSchema(
-        email=DB_USER_SCHEMA.email, password=DB_USER_SCHEMA.password
-    )
-    response = await async_client.post("users/login", content=login_data.json())
-    assert response.status_code == status.HTTP_200_OK
-    assert "access_token" in response.json()
 
 
 @pytest.mark.parametrize(
@@ -74,132 +256,26 @@ async def test_if_user_was_logged_correctly(
             pytest.lazy_fixture("staff_auth_headers"),
             status.HTTP_200_OK,
         ),
-        (None, None, status.HTTP_401_UNAUTHORIZED),
-    ],
-)
-@pytest.mark.asyncio
-async def test_only_staff_can_get_active_users(
-    async_client: AsyncClient,
-    user: UserOutputSchema,
-    user_headers: dict[str, str],
-    status_code: int,
-    db_superuser: UserOutputSchema
-):
-    response = await async_client.get("users/", headers=user_headers)
-
-    assert response.status_code == status_code
-    if status_code == status.HTTP_200_OK:
-        assert response.json()["total"] == 2
-
-@pytest.mark.parametrize(
-    "user, user_headers, status_code",
-    [
         (
-            pytest.lazy_fixture("db_user"),
-            pytest.lazy_fixture("auth_headers"),
+            pytest.lazy_fixture("db_superuser"),
+            pytest.lazy_fixture("superuser_auth_headers"),
             status.HTTP_200_OK,
         ),
-        (None, None, status.HTTP_401_UNAUTHORIZED),
     ],
 )
 @pytest.mark.asyncio
-async def test_authenticated_user_can_get_their_profile(
+async def test_only_staff_or_owner_can_update_single_lease(
     async_client: AsyncClient,
-    user_headers: dict[str, str],
-    user: UserOutputSchema,
-    status_code: int,
-):
-    response = await async_client.get(f"users/me", headers=user_headers)
-
-    assert response.status_code == status_code
-    if status_code == status.HTTP_200_OK:
-        assert response.json()["id"] == user.id
-
-
-@pytest.mark.parametrize(
-    "user, user_headers, status_code",
-    [
-        (
-            pytest.lazy_fixture("db_user"),
-            pytest.lazy_fixture("auth_headers"),
-            status.HTTP_403_FORBIDDEN,
-        ),
-        (
-            pytest.lazy_fixture("db_staff_user"),
-            pytest.lazy_fixture("staff_auth_headers"),
-            status.HTTP_200_OK,
-        ),
-        (None, None, status.HTTP_401_UNAUTHORIZED),
-    ],
-)
-@pytest.mark.asyncio
-async def test_only_staff_user_can_get_all_users(
-    async_client: AsyncClient,
+    db_leases: PagedResponseSchema[LeaseOutputSchema],
     user: UserOutputSchema,
     user_headers: dict[str, str],
     status_code: int,
 ):
-    response = await async_client.get("users/all", headers=user_headers)
-
-    assert response.status_code == status_code
-
-
-@pytest.mark.parametrize(
-    "user, user_headers, status_code",
-    [
-        (
-            pytest.lazy_fixture("db_user"),
-            pytest.lazy_fixture("auth_headers"),
-            status.HTTP_403_FORBIDDEN,
-        ),
-        (
-            pytest.lazy_fixture("db_staff_user"),
-            pytest.lazy_fixture("staff_auth_headers"),
-            status.HTTP_200_OK,
-        ),
-        (None, None, status.HTTP_401_UNAUTHORIZED),
-    ],
-)
-@pytest.mark.asyncio
-async def test_only_staff_user_can_get_single_user(
-    async_client: AsyncClient,
-    user: UserOutputSchema,
-    user_headers: dict[str, str],
-    status_code: int,
-    db_user: UserOutputSchema,
-):
-    response = await async_client.get(f"users/{db_user.id}", headers=user_headers)
-
-    assert response.status_code == status_code
-
-
-@pytest.mark.parametrize(
-    "user, user_headers, status_code",
-    [
-        (
-            pytest.lazy_fixture("db_user"),
-            pytest.lazy_fixture("auth_headers"),
-            status.HTTP_200_OK,
-        ),
-        (
-            pytest.lazy_fixture("db_staff_user"),
-            pytest.lazy_fixture("staff_auth_headers"),
-            status.HTTP_200_OK,
-        ),
-        (None, None, status.HTTP_401_UNAUTHORIZED),
-    ],
-)
-@pytest.mark.asyncio
-async def test_authenticated_user_can_update_single_user(
-    async_client: AsyncClient,
-    user: UserOutputSchema,
-    user_headers: dict[str, str],
-    status_code: int,
-    db_user: UserOutputSchema,
-):
-    update_data = UserUpdateSchemaFactory().generate(first_name="updated")
+    update_schema = LeaseUpdateSchemaFactory().generate(rent_amount=1234)
     response = await async_client.patch(
-        f"users/{db_user.id}", headers=user_headers, content=update_data.json()
+        f"leases/{db_leases.results[0].id}",
+        headers=user_headers,
+        content=update_schema.json(),
     )
 
     assert response.status_code == status_code
@@ -218,58 +294,31 @@ async def test_authenticated_user_can_update_single_user(
             pytest.lazy_fixture("staff_auth_headers"),
             status.HTTP_200_OK,
         ),
-        (None, None, status.HTTP_401_UNAUTHORIZED),
-    ],
-)
-@pytest.mark.asyncio
-async def test_only_staff_user_can_deactivate_single_user(
-    async_client: AsyncClient,
-    user: UserOutputSchema,
-    user_headers: dict[str, str],
-    status_code: int,
-    db_user: UserOutputSchema,
-):
-    response = await async_client.patch(
-        f"users/{db_user.id}/deactivate", headers=user_headers
-    )
-
-    assert response.status_code == status_code
-
-
-@pytest.mark.parametrize(
-    "user, user_headers, status_code",
-    [
         (
-            pytest.lazy_fixture("db_user"),
-            pytest.lazy_fixture("auth_headers"),
-            status.HTTP_403_FORBIDDEN,
-        ),
-        (
-            pytest.lazy_fixture("db_staff_user"),
-            pytest.lazy_fixture("staff_auth_headers"),
+            pytest.lazy_fixture("db_superuser"),
+            pytest.lazy_fixture("superuser_auth_headers"),
             status.HTTP_200_OK,
         ),
-        (None, None, status.HTTP_401_UNAUTHORIZED),
     ],
 )
 @pytest.mark.asyncio
-async def test_only_staff_user_can_activate_single_user(
+async def test_only_staff_or_owner_can_accept_or_discard_lease_renewal(
     async_client: AsyncClient,
+    db_leases: PagedResponseSchema[LeaseOutputSchema],
     user: UserOutputSchema,
     user_headers: dict[str, str],
     status_code: int,
-    db_user: UserOutputSchema,
 ):
-    """user deactivation"""
     response = await async_client.patch(
-        f"users/{db_user.id}/deactivate", headers=user_headers
+        f"leases/{db_leases.results[0].id}/accept-renewal",
+        headers=user_headers
     )
 
     assert response.status_code == status_code
-
-    """user activation"""
+    
     response = await async_client.patch(
-        f"users/{db_user.id}/activate", headers=user_headers
+        f"leases/{db_leases.results[0].id}/discard-renewal",
+        headers=user_headers
     )
 
     assert response.status_code == status_code
