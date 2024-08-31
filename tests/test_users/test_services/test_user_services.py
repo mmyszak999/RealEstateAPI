@@ -34,6 +34,7 @@ from tests.test_users.conftest import (
     db_staff_user,
     db_user,
     staff_auth_headers,
+    db_superuser
 )
 
 
@@ -89,6 +90,7 @@ async def test_if_multiple_users_were_returned(
     async_session: AsyncSession,
     db_user: UserOutputSchema,
     db_staff_user: UserOutputSchema,
+    db_superuser: UserOutputSchema
 ):
     users = await get_all_users(async_session, PageParams())
     assert users.total == 3
@@ -99,6 +101,7 @@ async def test_if_inactive_users_will_be_included_in_retrieving_all_users(
     async_session: AsyncSession,
     db_user: UserOutputSchema,
     db_staff_user: UserOutputSchema,
+    db_superuser: UserOutputSchema
 ):
     await deactivate_single_user(async_session, db_user.id, db_staff_user.id)
 

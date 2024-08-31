@@ -83,6 +83,7 @@ async def test_only_staff_can_get_active_users(
     user: UserOutputSchema,
     user_headers: dict[str, str],
     status_code: int,
+    db_superuser: UserOutputSchema
 ):
     response = await async_client.get("users/", headers=user_headers)
 

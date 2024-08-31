@@ -15,6 +15,7 @@ from tests.test_users.conftest import (
     db_staff_user,
     db_user,
     staff_auth_headers,
+    db_superuser
 )
 from tests.test_addresses.conftest import (
     db_addresses
@@ -80,7 +81,7 @@ async def test_staff_and_authenticated_user_can_get_all_addresses(
     response = await async_client.get("addresses/", headers=user_headers)
 
     assert response.status_code == status_code
-    assert response.json()["total"] == 5
+    assert response.json()["total"] == 4
 
 
 @pytest.mark.parametrize(

@@ -63,7 +63,7 @@ async def db_superuser(async_session: AsyncSession) -> UserOutputSchema:
         async_session,
         DB_SUPERUSER_SCHEMA,
         is_staff=True,
-        is_superuser=True
+        is_superuser=True,
     )
 
 

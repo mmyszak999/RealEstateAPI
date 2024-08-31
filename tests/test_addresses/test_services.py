@@ -31,7 +31,7 @@ from tests.test_addresses.conftest import (
     DB_PROPERTIES_ADDRESSES_SCHEMAS,
     db_addresses
 )
-from tests.test_users.conftest import db_staff_user, db_user
+from tests.test_users.conftest import db_staff_user, db_user, db_superuser
 from src.core.utils.orm import if_exists
 from src.apps.users.models import User
 from tests.test_companies.conftest import db_companies

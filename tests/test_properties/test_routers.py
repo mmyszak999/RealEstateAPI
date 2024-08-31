@@ -74,11 +74,12 @@ async def test_authenticated_user_can_get_available_properties(
     user: UserOutputSchema,
     user_headers: dict[str, str],
     status_code: int,
+    db_superuser: UserOutputSchema
 ):
     response = await async_client.get("properties/", headers=user_headers)
 
     assert response.status_code == status_code
-    assert response.json()["total"] == 3
+    assert response.json()["total"] == 2
 
 
 @pytest.mark.parametrize(
