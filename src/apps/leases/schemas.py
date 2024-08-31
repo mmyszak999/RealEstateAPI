@@ -22,13 +22,13 @@ class LeaseBaseSchema(BaseModel):
     @validator("start_date")
     def validate_start_date(cls, start_date: datetime.date) -> datetime.date:
         if (start_date < datetime.date.today()) and not isinstance(start_date, FakeDate) :
-            raise ValueError(f"{datetime.date.today(), start_date}, Start date must be in the future! ")
+            raise ValueError("Start date must be in the future! ")
         return start_date
     
     @validator("end_date")
     def validate_end_date(cls, end_date: Optional[datetime.date]) -> Optional[datetime.date]:
         if end_date and (end_date < datetime.date.today()) and not isinstance(end_date, FakeDate):
-            raise ValueError(f"{datetime.date.today(), end_date}, End date must be in the future! ")
+            raise ValueError("End date must be in the future! ")
         return end_date
 
     class Config:

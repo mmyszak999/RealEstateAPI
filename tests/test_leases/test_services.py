@@ -516,6 +516,6 @@ async def test_leases_with_the_first_date_will_have_its_property_status_changed(
     with freeze_time(lease.start_date):
         await manage_property_statuses_for_lease_with_the_start_date_being_today(async_session)
         await async_session.refresh(lease.property)
-        print(await get_all_properties(async_session, PageParams(), output_schema=PropertyOutputSchema))
+        
         property = await get_single_property(async_session, lease.property.id)
         assert property.property_status == PropertyStatusEnum.RENTED
