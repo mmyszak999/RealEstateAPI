@@ -1,6 +1,7 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import date, timedelta
+from freezegun import freeze_time
 
 from src.apps.users.schemas import UserIdSchema, UserOutputSchema
 from src.apps.leases.schemas import LeaseOutputSchema
@@ -11,9 +12,11 @@ from src.apps.leases.services import (
     get_all_leases,
     get_single_lease,
     update_single_lease,
-    manage_lease_renewal_status
+    manage_lease_renewal_status,
+    manage_lease_renewals_and_expired_statuses,
+    manage_property_statuses_for_lease_with_the_start_date_being_today
 )
-from src.apps.properties.services import create_property, update_single_property, get_all_properties
+from src.apps.properties.services import create_property, update_single_property, get_all_properties, get_single_property
 from src.core.exceptions import (
     AlreadyExists,
     DoesNotExist,
@@ -458,3 +461,61 @@ async def test_raise_exception_when_attempting_to_discard_discarded_lease_renewa
 ):
     with pytest.raises(TenantAlreadyDiscardedRenewalException):
         await manage_lease_renewal_status(async_session, db_leases.results[0].id, accept_renewal=False)
+
+
+@pytest.mark.asyncio
+async def test_leases_with_lease_expiration_date_higher_than_current_date_will_be_set_as_expired(
+    async_session: AsyncSession,
+    db_leases: PagedResponseSchema[LeaseOutputSchema]
+):
+    lease = await if_exists(Lease, "id", db_leases.results[0].id, async_session)
+    
+    with freeze_time(lease.lease_expiration_date + timedelta(days=1)):
+        await manage_lease_renewals_and_expired_statuses(async_session)
+        lease = await if_exists(Lease, "id", db_leases.results[0].id, async_session)
+        assert lease.lease_expired == True
+        property = await get_single_property(async_session, lease.property.id)
+        assert property.property_status == PropertyStatusEnum.AVAILABLE
+
+
+@pytest.mark.asyncio
+async def test_leases_with_lease_expiration_date_higher_than_current_date_and_renewal_accepted_will_be_managed_correctly(
+    async_session: AsyncSession,
+    db_leases: PagedResponseSchema[LeaseOutputSchema]
+):
+    lease = await if_exists(Lease, "id", db_leases.results[0].id, async_session)
+    lease.renewal_accepted = True
+    async_session.add(lease)
+    await async_session.commit()
+    await async_session.refresh(lease)
+    
+    assert lease.lease_expired == False
+    
+    with freeze_time(lease.lease_expiration_date + timedelta(days=1)):
+        await manage_lease_renewals_and_expired_statuses(async_session)
+        lease = await if_exists(Lease, "id", db_leases.results[0].id, async_session)
+        await async_session.refresh(lease)
+        assert lease.lease_expired == True
+        
+        property = await if_exists(Property, "id", lease.property.id, async_session)
+        all_leases = await get_all_leases(async_session, PageParams(), output_schema=LeaseOutputSchema)
+        
+        # new lease created as result of previously accepted lease renewal
+        assert len([lease for lease in all_leases.results if lease.lease_expired == False]) == 1
+
+
+@pytest.mark.asyncio
+async def test_leases_with_the_first_date_will_have_its_property_status_changed(
+    async_session: AsyncSession,
+    db_leases: PagedResponseSchema[LeaseOutputSchema]
+):
+    lease = await if_exists(Lease, "id", db_leases.results[0].id, async_session)
+    property = await get_single_property(async_session, lease.property.id)
+    assert property.property_status == PropertyStatusEnum.RESERVED
+    
+    with freeze_time(lease.start_date):
+        await manage_property_statuses_for_lease_with_the_start_date_being_today(async_session)
+        await async_session.refresh(lease.property)
+        print(await get_all_properties(async_session, PageParams(), output_schema=PropertyOutputSchema))
+        property = await get_single_property(async_session, lease.property.id)
+        assert property.property_status == PropertyStatusEnum.RENTED

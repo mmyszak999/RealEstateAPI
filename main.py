@@ -41,6 +41,7 @@ from src.core.exceptions import (
     PropertyWithoutOwnerException,
     UserCannotRentTheirPropertyForThemselvesException
 )
+from src.core.tasks import scheduler
 
 app = FastAPI(
     title="RealEstateAPI", description="Real Estate API", version="1.0"
