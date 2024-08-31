@@ -94,6 +94,23 @@ async def get_rented_properties(
 
 
 @property_router.get(
+    "/my-properties",
+    response_model=PagedResponseSchema[PropertyBasicOutputSchema],
+    status_code=status.HTTP_200_OK,
+)
+async def get_user_owner_leases(
+    request: Request,
+    session: AsyncSession = Depends(get_db),
+    page_params: PageParams = Depends(),
+    request_user: User = Depends(authenticate_user),
+) -> PagedResponseSchema[PropertyBasicOutputSchema]:
+    return await get_all_properties(
+        session, page_params, owner_id=request_user.id,
+        query_params=request.query_params.multi_items(),
+    )
+
+
+@property_router.get(
     "/{property_id}",
     response_model=Union[
         PropertyOutputSchema,
