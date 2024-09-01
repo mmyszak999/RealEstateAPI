@@ -1,54 +1,51 @@
 from fastapi import APIRouter, FastAPI, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth.exceptions import AuthJWTException
-from fastapi.middleware.cors import CORSMiddleware
 
-from src.apps.emails.routers import email_router
-from src.apps.users.routers import user_router
-from src.apps.jwt.routers import jwt_router
-from src.apps.properties.routers import property_router
-from src.apps.companies.routers import company_router
 from src.apps.addresses.routers import address_router
+from src.apps.companies.routers import company_router
+from src.apps.emails.routers import email_router
+from src.apps.jwt.routers import jwt_router
 from src.apps.leases.routers import lease_router
-from src.apps.payments.routers import stripe_router, payment_router
-
+from src.apps.payments.routers import payment_router, stripe_router
+from src.apps.properties.routers import property_router
+from src.apps.users.routers import user_router
 from src.core.exceptions import (
     AccountAlreadyActivatedException,
     AccountAlreadyDeactivatedException,
     AccountNotActivatedException,
+    ActiveLeaseException,
+    AddressAlreadyAssignedException,
     AlreadyExists,
     AuthenticationException,
     AuthorizationException,
-    DoesNotExist,
-    IsOccupied,
-    ServiceException,
-    UserCantActivateTheirAccountException,
-    UserCantDeactivateTheirAccountException,
-    NoSuchFieldException,
-    UnavailableFilterFieldException,
-    UnavailableSortFieldException,
-    OwnerAlreadyHasTheOwnershipException,
-    IncorrectEnumValueException,
-    UserAlreadyHasCompanyException,
-    IncorrectCompanyOrPropertyValueException,
-    UserHasNoCompanyException,
-    AddressAlreadyAssignedException,
-    PropertyNotAvailableForRentException,
-    UserCannotLeaseNotTheirPropertyException,
-    ActiveLeaseException,
-    IncorrectLeaseDatesException,
     CantModifyExpiredLeaseException,
+    DoesNotExist,
+    IncorrectCompanyOrPropertyValueException,
+    IncorrectEnumValueException,
+    IncorrectLeaseDatesException,
+    IsOccupied,
+    NoSuchFieldException,
+    OwnerAlreadyHasTheOwnershipException,
+    PaymentAlreadyAccepted,
+    PropertyNotAvailableForRentException,
+    PropertyWithoutOwnerException,
+    ServiceException,
     TenantAlreadyAcceptedRenewalException,
     TenantAlreadyDiscardedRenewalException,
-    PropertyWithoutOwnerException,
+    UnavailableFilterFieldException,
+    UnavailableSortFieldException,
+    UserAlreadyHasCompanyException,
+    UserCannotLeaseNotTheirPropertyException,
     UserCannotRentTheirPropertyForThemselvesException,
-    PaymentAlreadyAccepted
+    UserCantActivateTheirAccountException,
+    UserCantDeactivateTheirAccountException,
+    UserHasNoCompanyException,
 )
 from src.core.tasks import scheduler
 
-app = FastAPI(
-    title="RealEstateAPI", description="Real Estate API", version="1.0"
-)
+app = FastAPI(title="RealEstateAPI", description="Real Estate API", version="1.0")
 
 
 root_router = APIRouter(prefix="/api")
@@ -198,6 +195,7 @@ async def unavailable_sort_field_exception(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
 
+
 @app.exception_handler(OwnerAlreadyHasTheOwnershipException)
 async def owner_already_has_the_ownership_exception(
     request: Request, exception: OwnerAlreadyHasTheOwnershipException
@@ -205,6 +203,7 @@ async def owner_already_has_the_ownership_exception(
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
+
 
 @app.exception_handler(IncorrectEnumValueException)
 async def incorrect_enum_value_exception(
@@ -214,6 +213,7 @@ async def incorrect_enum_value_exception(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
 
+
 @app.exception_handler(UserAlreadyHasCompanyException)
 async def user_already_has_company_exception(
     request: Request, exception: UserAlreadyHasCompanyException
@@ -221,6 +221,7 @@ async def user_already_has_company_exception(
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
+
 
 @app.exception_handler(UserHasNoCompanyException)
 async def user_has_no_company_exception(
@@ -239,6 +240,7 @@ async def incorrect_company_or_property_value_exception(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
 
+
 @app.exception_handler(AddressAlreadyAssignedException)
 async def address_already_assigned_exception(
     request: Request, exception: AddressAlreadyAssignedException
@@ -246,6 +248,7 @@ async def address_already_assigned_exception(
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
+
 
 @app.exception_handler(PropertyNotAvailableForRentException)
 async def property_not_available_for_rent_exception(
@@ -255,6 +258,7 @@ async def property_not_available_for_rent_exception(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
 
+
 @app.exception_handler(UserCannotLeaseNotTheirPropertyException)
 async def user_cannot_lease_not_their_property_exception(
     request: Request, exception: UserCannotLeaseNotTheirPropertyException
@@ -262,6 +266,7 @@ async def user_cannot_lease_not_their_property_exception(
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
+
 
 @app.exception_handler(ActiveLeaseException)
 async def active_lease_exception(
@@ -271,6 +276,7 @@ async def active_lease_exception(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
 
+
 @app.exception_handler(IncorrectLeaseDatesException)
 async def incorrect_lease_dates_exception(
     request: Request, exception: IncorrectLeaseDatesException
@@ -278,6 +284,7 @@ async def incorrect_lease_dates_exception(
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
+
 
 @app.exception_handler(CantModifyExpiredLeaseException)
 async def cant_modify_expired_lease_exception(
@@ -287,6 +294,7 @@ async def cant_modify_expired_lease_exception(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
 
+
 @app.exception_handler(TenantAlreadyAcceptedRenewalException)
 async def tenant_already_accepted_renewal_exception(
     request: Request, exception: TenantAlreadyAcceptedRenewalException
@@ -294,6 +302,7 @@ async def tenant_already_accepted_renewal_exception(
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
+
 
 @app.exception_handler(TenantAlreadyDiscardedRenewalException)
 async def tenant_already_discarded_renewal_exception(
@@ -303,6 +312,7 @@ async def tenant_already_discarded_renewal_exception(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
 
+
 @app.exception_handler(PropertyWithoutOwnerException)
 async def property_without_owner_exception(
     request: Request, exception: PropertyWithoutOwnerException
@@ -311,6 +321,7 @@ async def property_without_owner_exception(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
 
+
 @app.exception_handler(UserCannotRentTheirPropertyForThemselvesException)
 async def user_cannot_rent_their_property_for_themselves_exception(
     request: Request, exception: UserCannotRentTheirPropertyForThemselvesException
@@ -318,6 +329,7 @@ async def user_cannot_rent_their_property_for_themselves_exception(
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
+
 
 @app.exception_handler(PaymentAlreadyAccepted)
 def handle_payment_already_accepted_exception(

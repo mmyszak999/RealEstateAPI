@@ -4,10 +4,7 @@ from fastapi_jwt_auth import AuthJWT
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.apps.users.models import User
-from src.apps.users.schemas import (
-    UserLoginInputSchema,
-    UserOutputSchema,
-)
+from src.apps.users.schemas import UserLoginInputSchema, UserOutputSchema
 from src.apps.users.services.activation_services import (
     activate_account_service,
     activate_single_user,

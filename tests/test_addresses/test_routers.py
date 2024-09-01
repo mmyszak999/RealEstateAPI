@@ -3,26 +3,24 @@ from fastapi import status
 from fastapi_jwt_auth import AuthJWT
 from httpx import AsyncClient, Response
 
-from src.apps.users.schemas import UserOutputSchema, UserIdSchema
 from src.apps.addresses.schemas import AddressOutputSchema
+from src.apps.companies.schemas import CompanyOutputSchema
+from src.apps.users.schemas import UserIdSchema, UserOutputSchema
 from src.core.factory.address_factory import (
     AddressInputSchemaFactory,
     AddressUpdateSchemaFactory,
 )
+from src.core.pagination.schemas import PagedResponseSchema
+from tests.test_addresses.conftest import db_addresses
+from tests.test_companies.conftest import db_companies
 from tests.test_users.conftest import (
     DB_USER_SCHEMA,
     auth_headers,
     db_staff_user,
+    db_superuser,
     db_user,
     staff_auth_headers,
-    db_superuser
 )
-from tests.test_addresses.conftest import (
-    db_addresses
-)
-from src.apps.companies.schemas import CompanyOutputSchema
-from tests.test_companies.conftest import db_companies
-from src.core.pagination.schemas import PagedResponseSchema
 
 
 @pytest.mark.parametrize(
@@ -48,7 +46,9 @@ async def test_only_staff_user_can_create_address(
     status_code: int,
     db_companies: PagedResponseSchema[CompanyOutputSchema],
 ):
-    address_data = AddressInputSchemaFactory().generate(company_id=db_companies.results[-1].id)
+    address_data = AddressInputSchemaFactory().generate(
+        company_id=db_companies.results[-1].id
+    )
     response = await async_client.post(
         "addresses/", headers=user_headers, content=address_data.json()
     )
@@ -126,7 +126,7 @@ async def test_authenticated_user_can_get_single_address(
             pytest.lazy_fixture("db_staff_user"),
             pytest.lazy_fixture("staff_auth_headers"),
             status.HTTP_200_OK,
-        )
+        ),
     ],
 )
 @pytest.mark.asyncio

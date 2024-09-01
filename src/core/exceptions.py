@@ -1,6 +1,6 @@
+from datetime import date
 from decimal import Decimal
 from typing import Any
-from datetime import date
 
 
 class ServiceException(Exception):
@@ -83,19 +83,22 @@ class UnavailableSortFieldException(ServiceException):
 class NoSuchFieldException(ServiceException):
     def __init__(self, model_name: str, field: str) -> None:
         super().__init__(f"Object {model_name} does not have field={field} ! ")
-        
-        
+
+
 class OwnerAlreadyHasTheOwnershipException(ServiceException):
     def __init__(self) -> None:
         super().__init__("The owner is already assigned to the property ownership! ")
-        
-        
+
+
 class IncorrectEnumValueException(ServiceException):
-    def __init__(self, field_name: str, typed_value:any, available_values: list[any]) -> None:
+    def __init__(
+        self, field_name: str, typed_value: any, available_values: list[any]
+    ) -> None:
         super().__init__(
             f"The value for the field {field_name}={typed_value} is incorrect! "
             f"Pick from available values: {available_values}"
         )
+
 
 class UserAlreadyHasCompanyException(ServiceException):
     def __init__(self) -> None:
@@ -104,8 +107,10 @@ class UserAlreadyHasCompanyException(ServiceException):
 
 class UserHasNoCompanyException(ServiceException):
     def __init__(self) -> None:
-        super().__init__(f"User does not belong to any company so cannot be removed from one! ")
-    
+        super().__init__(
+            f"User does not belong to any company so cannot be removed from one! "
+        )
+
 
 class IncorrectCompanyOrPropertyValueException(ServiceException):
     def __init__(self) -> None:
@@ -117,10 +122,8 @@ class IncorrectCompanyOrPropertyValueException(ServiceException):
 
 class AddressAlreadyAssignedException(ServiceException):
     def __init__(self, object: str) -> None:
-        super().__init__(
-            f"{object} already has address assigned! "
-        )
-        
+        super().__init__(f"{object} already has address assigned! ")
+
 
 class PropertyNotAvailableForRentException(ServiceException):
     def __init__(self) -> None:
@@ -128,6 +131,7 @@ class PropertyNotAvailableForRentException(ServiceException):
             "The requested property is not available for rent! "
             "It may be already rented or reserved! "
         )
+
 
 class UserCannotLeaseNotTheirPropertyException(ServiceException):
     def __init__(self) -> None:
@@ -143,6 +147,7 @@ class ActiveLeaseException(ServiceException):
             "as the property still has the active lease or has the renewal accepted ! "
         )
 
+
 class IncorrectLeaseDatesException(ServiceException):
     def __init__(self, end_date: date, start_date: date) -> None:
         super().__init__(
@@ -152,40 +157,29 @@ class IncorrectLeaseDatesException(ServiceException):
 
 class CantModifyExpiredLeaseException(ServiceException):
     def __init__(self) -> None:
-        super().__init__(
-            "Expired lease cannot be modified after the expiration date! "
-        )
-        
+        super().__init__("Expired lease cannot be modified after the expiration date! ")
 
 
 class TenantAlreadyAcceptedRenewalException(ServiceException):
     def __init__(self) -> None:
-        super().__init__(
-            "Tenant already accepted the lease renewal! "
-        )
-        
+        super().__init__("Tenant already accepted the lease renewal! ")
+
+
 class TenantAlreadyDiscardedRenewalException(ServiceException):
     def __init__(self) -> None:
-        super().__init__(
-            "Tenant already discarded the lease renewal! "
-        )
+        super().__init__("Tenant already discarded the lease renewal! ")
 
 
 class PropertyWithoutOwnerException(ServiceException):
     def __init__(self) -> None:
-        super().__init__(
-            "Property with no owner assigned cannot be rented! "
-        )
+        super().__init__("Property with no owner assigned cannot be rented! ")
+
 
 class UserCannotRentTheirPropertyForThemselvesException(ServiceException):
     def __init__(self) -> None:
-        super().__init__(
-            "Property owner cannot rent the property for themselves ! "
-        )
+        super().__init__("Property owner cannot rent the property for themselves ! ")
 
 
 class PaymentAlreadyAccepted(ServiceException):
     def __init__(self) -> None:
-        super().__init__(
-            "Payment for your rent is already accepted!"
-        )
+        super().__init__("Payment for your rent is already accepted!")

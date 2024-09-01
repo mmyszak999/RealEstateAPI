@@ -1,8 +1,10 @@
 from datetime import date
-from decimal import Decimal
 from typing import Optional
 
-from src.apps.users.schemas import UserRegisterSchema, UserPasswordSchema, UserUpdateSchema
+from src.apps.users.schemas import (
+    UserRegisterSchema,
+    UserUpdateSchema,
+)
 from src.core.factory.core import SchemaFactory
 
 
@@ -40,11 +42,11 @@ class UserUpdateSchemaFactory(SchemaFactory):
         first_name: Optional[str] = None,
         last_name: Optional[str] = None,
         birth_date: Optional[date] = None,
-        phone_number: Optional[str] = None
+        phone_number: Optional[str] = None,
     ):
         return self.schema_class(
             first_name=first_name,
             last_name=last_name,
             phone_number=phone_number,
-            birth_date=birth_date
+            birth_date=birth_date,
         )

@@ -1,26 +1,26 @@
 from typing import Union
 
+from pydantic import BaseModel
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel
 
+from src.apps.properties.enums import PropertyStatusEnum, PropertyTypeEnum
 from src.apps.properties.models import Property
 from src.apps.properties.schemas import (
+    PropertyBasicOutputSchema,
     PropertyInputSchema,
     PropertyOutputSchema,
+    PropertyOwnerIdSchema,
     PropertyUpdateSchema,
-    PropertyBasicOutputSchema,
-    PropertyOwnerIdSchema
 )
 from src.apps.users.models import User
-from src.apps.properties.enums import PropertyStatusEnum, PropertyTypeEnum
 from src.core.exceptions import (
     AlreadyExists,
     DoesNotExist,
-    IsOccupied, 
-    OwnerAlreadyHasTheOwnershipException,
     IncorrectEnumValueException,
-    ServiceException
+    IsOccupied,
+    OwnerAlreadyHasTheOwnershipException,
+    ServiceException,
 )
 from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
@@ -36,18 +36,19 @@ async def create_property(
     if owner_id := property_data.get("owner_id"):
         if not (owner_object := await if_exists(User, "id", owner_id, session)):
             raise DoesNotExist(User.__name__, "id", owner_id)
-        
+
         if not owner_object.is_active:
-            raise ServiceException("Inactive user cannot be assigned as a property owner! ")
-        
-    
-    property_status = property_data.get('property_status', "").value
+            raise ServiceException(
+                "Inactive user cannot be assigned as a property owner! "
+            )
+
+    property_status = property_data.get("property_status", "").value
     if property_status and (property_status not in PropertyStatusEnum.list_values()):
         raise IncorrectEnumValueException(
             "property_status", property_status, PropertyStatusEnum.list_values()
         )
-        
-    property_type = property_data.get('property_type', "").value
+
+    property_type = property_data.get("property_type", "").value
     if property_type and (property_type not in PropertyTypeEnum.list_values()):
         raise IncorrectEnumValueException(
             "property_type", property_type, PropertyTypeEnum.list_values()
@@ -61,11 +62,10 @@ async def create_property(
 
 
 async def get_single_property(
-    session: AsyncSession, property_id: str, output_schema: BaseModel = PropertyOutputSchema
-) -> Union[
-        PropertyOutputSchema,
-        PropertyBasicOutputSchema
-        ]:
+    session: AsyncSession,
+    property_id: str,
+    output_schema: BaseModel = PropertyOutputSchema,
+) -> Union[PropertyOutputSchema, PropertyBasicOutputSchema]:
     if not (property_object := await if_exists(Property, "id", property_id, session)):
         raise DoesNotExist(Property.__name__, "id", property_id)
 
@@ -79,18 +79,18 @@ async def get_all_properties(
     get_rented: bool = False,
     owner_id: str = None,
     output_schema: BaseModel = PropertyBasicOutputSchema,
-    query_params: list[tuple] = None
+    query_params: list[tuple] = None,
 ) -> PagedResponseSchema[PropertyBasicOutputSchema]:
     query = select(Property)
     if get_available:
         query = query.filter(Property.property_status == PropertyStatusEnum.AVAILABLE)
-        
+
     if get_rented:
         query = query.filter(Property.property_status == PropertyStatusEnum.RENTED)
 
     if owner_id:
         query = query.filter(Property.owner_id == owner_id)
-    
+
     if query_params:
         query = filter_and_sort_instances(query_params, query, Property)
 
@@ -111,15 +111,15 @@ async def update_single_property(
 
     property_data = property_input.dict(exclude_unset=True, exclude_none=True)
 
-    property_status = property_data.get('property_status', "")
-    
+    property_status = property_data.get("property_status", "")
+
     if property_status and (property_status not in PropertyStatusEnum.list_values()):
         raise IncorrectEnumValueException(
-            "property_status", property_status, PropertyStatusEnum.list_values()    
+            "property_status", property_status, PropertyStatusEnum.list_values()
         )
-        
-    property_type = property_data.get('property_type', "")
-    
+
+    property_type = property_data.get("property_type", "")
+
     if property_type and (property_type not in PropertyTypeEnum.list_values()):
         raise IncorrectEnumValueException(
             "property_type", property_type, PropertyTypeEnum.list_values()
@@ -127,9 +127,9 @@ async def update_single_property(
 
     if property_data:
         statement = (
-                update(Property).filter(Property.id == property_id).values(**property_data)
-            )
-    
+            update(Property).filter(Property.id == property_id).values(**property_data)
+        )
+
     await session.execute(statement)
     await session.commit()
     await session.refresh(property_object)
@@ -144,20 +144,20 @@ async def change_property_owner(
         raise DoesNotExist(Property.__name__, "id", property_id)
 
     property_data = property_input.dict()
-    
+
     owner_id = property_data.get("id", "")
 
     if owner_id:
         owner_object = await if_exists(User, "id", owner_id, session)
         if not owner_object:
             raise DoesNotExist(User.__name__, "id", owner_id)
-        
+
         if not owner_object.is_active:
             raise ServiceException("Inactive user cannot be the property owner! ")
-        
+
         if property_object.owner_id == owner_object.id:
             raise OwnerAlreadyHasTheOwnershipException
-    
+
     property_object.owner_id = owner_id
     session.add(property_object)
     await session.commit()

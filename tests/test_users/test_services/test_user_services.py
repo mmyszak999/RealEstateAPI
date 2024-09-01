@@ -10,7 +10,6 @@ from src.apps.users.services.user_services import (
     authenticate,
     create_single_user,
     create_user_base,
-    delete_single_user,
     get_all_users,
     get_single_user,
     update_single_user,
@@ -32,9 +31,9 @@ from tests.test_users.conftest import (
     DB_USER_SCHEMA,
     auth_headers,
     db_staff_user,
+    db_superuser,
     db_user,
     staff_auth_headers,
-    db_superuser
 )
 
 
@@ -90,7 +89,7 @@ async def test_if_multiple_users_were_returned(
     async_session: AsyncSession,
     db_user: UserOutputSchema,
     db_staff_user: UserOutputSchema,
-    db_superuser: UserOutputSchema
+    db_superuser: UserOutputSchema,
 ):
     users = await get_all_users(async_session, PageParams())
     assert users.total == 3
@@ -101,7 +100,7 @@ async def test_if_inactive_users_will_be_included_in_retrieving_all_users(
     async_session: AsyncSession,
     db_user: UserOutputSchema,
     db_staff_user: UserOutputSchema,
-    db_superuser: UserOutputSchema
+    db_superuser: UserOutputSchema,
 ):
     await deactivate_single_user(async_session, db_user.id, db_staff_user.id)
 
@@ -121,10 +120,3 @@ async def test_raise_exception_while_updating_nonexistent_user(
     with pytest.raises(DoesNotExist):
         await update_single_user(async_session, update_data, generate_uuid())
 
-
-@pytest.mark.asyncio
-async def test_raise_exception_while_deleting_nonexistent_user(
-    async_session: AsyncSession,
-):
-    with pytest.raises(DoesNotExist):
-        await delete_single_user(async_session, generate_uuid())

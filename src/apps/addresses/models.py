@@ -37,4 +37,3 @@ class Address(Base):
         nullable=True,
     )
     property = relationship("Property", back_populates="address", lazy="subquery")
-    

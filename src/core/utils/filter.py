@@ -3,7 +3,6 @@ from sqlalchemy.orm.properties import RelationshipProperty
 
 from src.core.filter.main_filter import Filter
 from src.core.utils.constants import (
-    FORBIDDEN_FIELDS,
     PAGINATION_PARAMS_HEADERS,
     PARAM_HEADERS_WITHOUT_FILTERS,
     SORT_PARAMS_HEADER,

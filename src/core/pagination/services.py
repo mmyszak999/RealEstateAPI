@@ -1,5 +1,3 @@
-import asyncio
-
 from sqlalchemy import Table, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 

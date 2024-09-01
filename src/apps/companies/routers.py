@@ -1,26 +1,26 @@
 from typing import Union
 
 from fastapi import Depends, Request, Response, status
-from fastapi.routing import APIRouter
 from fastapi.responses import JSONResponse
+from fastapi.routing import APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.apps.companies.schemas import (
+    CompanyBasicOutputSchema,
     CompanyInputSchema,
     CompanyOutputSchema,
     CompanyUpdateSchema,
-    CompanyBasicOutputSchema,
 )
-from src.apps.users.schemas import UserIdSchema
 from src.apps.companies.services import (
+    add_single_user_to_company,
     create_company,
     get_all_companies,
     get_single_company,
+    remove_single_user_from_company,
     update_single_company,
-    add_single_user_to_company,
-    remove_single_user_from_company
 )
 from src.apps.users.models import User
+from src.apps.users.schemas import UserIdSchema
 from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
 from src.core.permissions import check_if_staff
@@ -62,23 +62,19 @@ async def get_companies(
 
 @company_router.get(
     "/{company_id}",
-    response_model=Union[
-        CompanyOutputSchema,
-        CompanyBasicOutputSchema
-        ],
+    response_model=Union[CompanyOutputSchema, CompanyBasicOutputSchema],
     status_code=status.HTTP_200_OK,
 )
 async def get_company(
     company_id: str,
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
-) -> Union[
-        CompanyOutputSchema,
-        CompanyBasicOutputSchema
-        ]:
+) -> Union[CompanyOutputSchema, CompanyBasicOutputSchema]:
     if request_user.is_staff or request_user.company_id == company_id:
         return await get_single_company(session, company_id)
-    return await get_single_company(session, company_id, output_schema=CompanyBasicOutputSchema)
+    return await get_single_company(
+        session, company_id, output_schema=CompanyBasicOutputSchema
+    )
 
 
 @company_router.patch(
@@ -111,7 +107,8 @@ async def add_user_to_company(
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"message": "The user has been added to the company! "},
-    ) 
+    )
+
 
 @company_router.patch(
     "/{company_id}/remove-user",
@@ -128,4 +125,4 @@ async def remove_user_from_company(
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"message": "The user has been removed from the company! "},
-    ) 
+    )

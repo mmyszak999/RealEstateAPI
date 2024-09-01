@@ -1,13 +1,13 @@
-from enum import Enum
 import datetime
 from decimal import Decimal
+from enum import Enum
 from typing import Any, Optional
 
 from pydantic import BaseModel, EmailStr, Field, validator
 
-from src.apps.properties.enums import PropertyTypeEnum, PropertyStatusEnum
-from src.apps.users.schemas import UserInfoOutputSchema, UserIdSchema
 from src.apps.addresses.schemas import AddressBasicOutputSchema
+from src.apps.properties.enums import PropertyStatusEnum, PropertyTypeEnum
+from src.apps.users.schemas import UserIdSchema, UserInfoOutputSchema
 
 
 class PropertyBaseSchema(BaseModel):
@@ -26,7 +26,7 @@ class PropertyInputSchema(PropertyBaseSchema):
     owner_id: Optional[str]
     description: Optional[str] = Field(max_length=500)
     property_value: Decimal
-    
+
     class Config:
         orm_mode = True
 

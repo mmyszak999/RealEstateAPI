@@ -1,40 +1,39 @@
-from typing import Union
 from datetime import date, datetime, timedelta
+from typing import Union
 
 from fastapi import BackgroundTasks
+from pydantic import BaseModel
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel
-from fastapi_utils.tasks import repeat_every 
 
+from src.apps.leases.enums import BillingPeriodEnum
 from src.apps.leases.models import Lease
-from src.apps.payments.models import Payment
 from src.apps.leases.schemas import (
+    LeaseBasicOutputSchema,
     LeaseInputSchema,
     LeaseOutputSchema,
     LeaseUpdateSchema,
-    LeaseBasicOutputSchema
 )
-from src.apps.properties.models import Property
-from src.apps.properties.enums import PropertyStatusEnum
+from src.apps.payments.models import Payment
 from src.apps.payments.services import create_payment
+from src.apps.properties.enums import PropertyStatusEnum
+from src.apps.properties.models import Property
 from src.apps.users.models import User
-from src.apps.leases.enums import BillingPeriodEnum
 from src.core.exceptions import (
-    AlreadyExists,
-    DoesNotExist,
-    IsOccupied, 
-    IncorrectEnumValueException,
-    ServiceException,
-    PropertyNotAvailableForRentException,
-    UserCannotLeaseNotTheirPropertyException,
     ActiveLeaseException,
-    IncorrectLeaseDatesException,
+    AlreadyExists,
     CantModifyExpiredLeaseException,
+    DoesNotExist,
+    IncorrectEnumValueException,
+    IncorrectLeaseDatesException,
+    IsOccupied,
+    PropertyNotAvailableForRentException,
+    PropertyWithoutOwnerException,
+    ServiceException,
     TenantAlreadyAcceptedRenewalException,
     TenantAlreadyDiscardedRenewalException,
-    PropertyWithoutOwnerException,
-    UserCannotRentTheirPropertyForThemselvesException
+    UserCannotLeaseNotTheirPropertyException,
+    UserCannotRentTheirPropertyForThemselvesException,
 )
 from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
@@ -46,7 +45,6 @@ from src.core.utils.orm import if_exists
 async def create_lease(
     session: AsyncSession, lease_input: LeaseInputSchema
 ) -> LeaseBasicOutputSchema:
-    
     """
     to create a lease we need to link property, owner and tenant
     owner and tenant are User objects with separate foreign key
@@ -54,55 +52,57 @@ async def create_lease(
     """
     lease_data = lease_input.dict()
     if property_id := lease_data.get("property_id"):
-        if not (property_object := await if_exists(Property, "id", property_id, session)):
+        if not (
+            property_object := await if_exists(Property, "id", property_id, session)
+        ):
             raise DoesNotExist(Property.__name__, "id", property_id)
-        
+
         if not property_object.owner:
             raise PropertyWithoutOwnerException
-        
+
         if property_object.property_status != PropertyStatusEnum.AVAILABLE:
             raise PropertyNotAvailableForRentException
-    
+
     if owner_id := lease_data.get("owner_id"):
         if not (owner_object := await if_exists(User, "id", owner_id, session)):
             raise DoesNotExist(User.__name__, "id", owner_id)
-        
+
         if property_object.owner_id != owner_id:
             raise UserCannotLeaseNotTheirPropertyException
-        
+
         if not owner_object.is_active:
-            raise ServiceException("Inactive user cannot be assigned as a lease owner! ")
-    
-    
+            raise ServiceException(
+                "Inactive user cannot be assigned as a lease owner! "
+            )
+
     if tenant_id := lease_data.get("tenant_id"):
         if not (tenant_object := await if_exists(User, "id", tenant_id, session)):
             raise DoesNotExist(User.__name__, "id", tenant_id)
-        
+
         if property_object.owner_id == tenant_id:
             raise UserCannotRentTheirPropertyForThemselvesException
-        
+
         if not tenant_object.is_active:
             raise ServiceException("Inactive user cannot be assigned as a tenant! ")
-    
+
     """
     check if there are active property leases
     """
-    statement = select(Lease
-            ).where(
-                Lease.property_id == property_id,
-                Lease.lease_expired == False,
-                Lease.lease_expiration_date >= lease_data.get("start_date")
-        )
+    statement = select(Lease).where(
+        Lease.property_id == property_id,
+        Lease.lease_expired == False,
+        Lease.lease_expiration_date >= lease_data.get("start_date"),
+    )
     active_property_lease_check = await session.scalars(statement)
-    
+
     if active_property_lease_check.unique().all():
         raise ActiveLeaseException
-    
+
     start_date, end_date = lease_data.get("start_date"), lease_data.get("end_date")
     if (start_date and end_date) and (start_date > end_date):
         raise IncorrectLeaseDatesException(end_date, start_date)
-    
-    billing_period = lease_data.get('billing_period', "").value
+
+    billing_period = lease_data.get("billing_period", "").value
     if billing_period and (billing_period not in BillingPeriodEnum.list_values()):
         raise IncorrectEnumValueException(
             "billing_period", billing_period, BillingPeriodEnum.list_values()
@@ -121,10 +121,7 @@ async def create_lease(
 
 async def get_single_lease(
     session: AsyncSession, lease_id: str, output_schema: BaseModel = LeaseOutputSchema
-) -> Union[
-        LeaseOutputSchema,
-        LeaseBasicOutputSchema
-        ]:
+) -> Union[LeaseOutputSchema, LeaseBasicOutputSchema]:
     if not (lease_object := await if_exists(Lease, "id", lease_id, session)):
         raise DoesNotExist(Lease.__name__, "id", lease_id)
 
@@ -140,21 +137,21 @@ async def get_all_leases(
     user_id_tenant_leases: str = None,
     user_id_owner_leases: str = None,
     output_schema: BaseModel = LeaseBasicOutputSchema,
-    query_params: list[tuple] = None
+    query_params: list[tuple] = None,
 ) -> PagedResponseSchema[LeaseBasicOutputSchema]:
     query = select(Lease)
     if get_with_renewal_accepted:
         query = query.filter(Lease.renewal_accepted == True)
-        
+
     if get_expired:
         query = query.filter(Lease.lease_expired == True)
-        
+
     if get_active:
         query = query.filter(Lease.lease_expired == False)
-        
+
     if user_id_owner_leases:
         query = query.filter(Lease.owner_id == user_id_owner_leases)
-        
+
     if user_id_tenant_leases:
         query = query.filter(Lease.tenant_id == user_id_tenant_leases)
 
@@ -177,15 +174,17 @@ async def update_single_lease(
         raise DoesNotExist(Lease.__name__, "id", lease_id)
 
     lease_data = lease_input.dict(exclude_unset=True, exclude_none=True)
-    
+
     if lease_object.lease_expired:
         raise CantModifyExpiredLeaseException
-    
-    lease_expiration_date = lease_data.get('lease_expiration_date')
+
+    lease_expiration_date = lease_data.get("lease_expiration_date")
     end_date = lease_object.end_date or None
-    
+
     if lease_expiration_date:
-        if (lease_expiration_date < lease_object.start_date) or (lease_expiration_date < date.today()):
+        if (lease_expiration_date < lease_object.start_date) or (
+            lease_expiration_date < date.today()
+        ):
             raise ServiceException(
                 "Expiration date cannot be smaller than the lease start date and the current date! "
             )
@@ -193,18 +192,17 @@ async def update_single_lease(
             lease_object.end_date = lease_expiration_date
         lease_object.lease_expiration_date = lease_expiration_date
         session.add(lease_object)
-    
+
     if lease_data:
-        statement = (
-                update(Lease).filter(Lease.id == lease_id).values(**lease_data)
-            )
-    
+        statement = update(Lease).filter(Lease.id == lease_id).values(**lease_data)
+
         await session.execute(statement)
         await session.commit()
         await session.refresh(lease_object)
 
-    return await get_single_lease(session, lease_id=lease_id, output_schema=LeaseBasicOutputSchema)
-
+    return await get_single_lease(
+        session, lease_id=lease_id, output_schema=LeaseBasicOutputSchema
+    )
 
 
 async def manage_lease_renewal_status(
@@ -215,10 +213,10 @@ async def manage_lease_renewal_status(
 
     if lease_object.renewal_accepted and accept_renewal:
         raise TenantAlreadyAcceptedRenewalException
-    
-    if (not lease_object.renewal_accepted and not accept_renewal):
+
+    if not lease_object.renewal_accepted and not accept_renewal:
         raise TenantAlreadyDiscardedRenewalException
-    
+
     lease_object.renewal_accepted = accept_renewal
     session.add(lease_object)
     await session.commit()
@@ -227,19 +225,18 @@ async def manage_lease_renewal_status(
 
 
 async def accept_single_lease_renewal(
-    session: AsyncSession, lease_id: str,
+    session: AsyncSession,
+    lease_id: str,
 ) -> None:
-    return await manage_lease_renewal_status(
-        session, lease_id
-    )
+    return await manage_lease_renewal_status(session, lease_id)
 
 
 async def discard_single_lease_renewal(
-    session: AsyncSession, lease_id: str,
+    session: AsyncSession,
+    lease_id: str,
 ) -> None:
-    return await manage_lease_renewal_status(
-        session, lease_id, accept_renewal=False
-    )
+    return await manage_lease_renewal_status(session, lease_id, accept_renewal=False)
+
 
 """
 services for running tasks
@@ -269,7 +266,7 @@ async def base_manage_lease_renewals_and_expired_statuses(
             payment_bank_account=lease.payment_bank_account,
             owner_id=lease.owner_id,
             tenant_id=lease.tenant_id,
-            property_id=lease.property_id
+            property_id=lease.property_id,
         )
         session.add(new_lease)
         await session.flush()
@@ -278,18 +275,15 @@ async def base_manage_lease_renewals_and_expired_statuses(
     lease.property.property_status = PropertyStatusEnum.AVAILABLE
     session.add(lease)
     session.add(lease.property)
-    
 
-async def manage_lease_renewals_and_expired_statuses(
-    session: AsyncSession
-) -> None:
+
+async def manage_lease_renewals_and_expired_statuses(session: AsyncSession) -> None:
     """
     if lease is not expired and the expiration date is bigger than the current date,
     the lease is set as expired
     """
     statement = select(Lease).filter(
-        Lease.lease_expired == False,
-        Lease.lease_expiration_date < date.today()
+        Lease.lease_expired == False, Lease.lease_expiration_date < date.today()
     )
     expired_leases = await session.scalars(statement)
     expired_leases = expired_leases.unique().all()
@@ -306,23 +300,24 @@ async def base_manage_property_statuses_for_lease_with_the_start_date_being_toda
     property = await if_exists(Property, "id", lease.property.id, session)
     property.property_status = PropertyStatusEnum.RENTED
     session.add(property)
-    
-    
+
+
 async def manage_property_statuses_for_lease_with_the_start_date_being_today(
-    session: AsyncSession
+    session: AsyncSession,
 ) -> None:
     """
     check the leases with the start date being the same as the current date
-    their property status is being changed to RENTED 
+    their property status is being changed to RENTED
     """
     statement = select(Lease).filter(
-        Lease.lease_expired == False,
-        Lease.start_date == date.today()
+        Lease.lease_expired == False, Lease.start_date == date.today()
     )
     leases_with_the_first_day = await session.scalars(statement)
     leases_with_the_first_day = leases_with_the_first_day.unique().all()
     [
-        await base_manage_property_statuses_for_lease_with_the_start_date_being_today(session, lease)
+        await base_manage_property_statuses_for_lease_with_the_start_date_being_today(
+            session, lease
+        )
         for lease in leases_with_the_first_day
     ]
     await session.commit()
@@ -334,12 +329,11 @@ async def manage_leases_with_incoming_payment_date(
     """
     check the leases with the next_payment_date being the same as the current date
     the payment object is being created for the and the tenant gets email with
-    the link to payment
+    the link to payment (with SEND_EMAILS=True in .env)
     such leases after that have their next_payment_date parameter updated
     """
     statement = select(Lease).filter(
-        Lease.lease_expired == False,
-        Lease.next_payment_date == date.today()
+        Lease.lease_expired == False, Lease.next_payment_date == date.today()
     )
     leases_with_incoming_payments = await session.scalars(statement)
     leases_with_incoming_payments = leases_with_incoming_payments.unique().all()
@@ -348,4 +342,3 @@ async def manage_leases_with_incoming_payment_date(
         for lease in leases_with_incoming_payments
     ]
     await session.commit()
-

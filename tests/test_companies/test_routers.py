@@ -3,12 +3,14 @@ from fastapi import status
 from fastapi_jwt_auth import AuthJWT
 from httpx import AsyncClient, Response
 
-from src.apps.users.schemas import UserOutputSchema, UserIdSchema
 from src.apps.companies.schemas import CompanyOutputSchema
+from src.apps.users.schemas import UserIdSchema, UserOutputSchema
 from src.core.factory.company_factory import (
     CompanyInputSchemaFactory,
     CompanyUpdateSchemaFactory,
 )
+from src.core.pagination.schemas import PagedResponseSchema
+from tests.test_companies.conftest import db_companies
 from tests.test_users.conftest import (
     DB_USER_SCHEMA,
     auth_headers,
@@ -16,10 +18,6 @@ from tests.test_users.conftest import (
     db_user,
     staff_auth_headers,
 )
-from tests.test_companies.conftest import (
-    db_companies
-)
-from src.core.pagination.schemas import PagedResponseSchema
 
 
 @pytest.mark.parametrize(
@@ -123,7 +121,7 @@ async def test_authenticated_user_can_get_single_company(
             pytest.lazy_fixture("db_staff_user"),
             pytest.lazy_fixture("staff_auth_headers"),
             status.HTTP_200_OK,
-        )
+        ),
     ],
 )
 @pytest.mark.asyncio
@@ -166,12 +164,13 @@ async def test_only_staff_user_can_add_single_user_to_company(
     user: UserOutputSchema,
     user_headers: dict[str, str],
     status_code: int,
-    db_user: UserOutputSchema
+    db_user: UserOutputSchema,
 ):
     update_schema = UserIdSchema(id=db_user.id)
     response = await async_client.patch(
-        f"companies/{db_companies.results[0].id}/add-user", headers=user_headers,
-        content=update_schema.json()
+        f"companies/{db_companies.results[0].id}/add-user",
+        headers=user_headers,
+        content=update_schema.json(),
     )
 
     assert response.status_code == status_code
@@ -199,14 +198,13 @@ async def test_only_staff_user_can_remove_single_user_from_company(
     user: UserOutputSchema,
     user_headers: dict[str, str],
     status_code: int,
-    db_staff_user: UserOutputSchema
+    db_staff_user: UserOutputSchema,
 ):
     update_schema = UserIdSchema(id=db_staff_user.id)
     response = await async_client.patch(
-        f"companies/{db_companies.results[0].id}/remove-user", headers=user_headers,
-        content=update_schema.json()
+        f"companies/{db_companies.results[0].id}/remove-user",
+        headers=user_headers,
+        content=update_schema.json(),
     )
 
     assert response.status_code == status_code
-
-

@@ -1,29 +1,30 @@
 from typing import Union
 
 from fastapi import Depends, Request, Response, status
-from fastapi.routing import APIRouter
 from fastapi.responses import JSONResponse
+from fastapi.routing import APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.apps.leases.schemas import (
+    LeaseBasicOutputSchema,
     LeaseInputSchema,
     LeaseOutputSchema,
     LeaseUpdateSchema,
-    LeaseBasicOutputSchema
 )
 from src.apps.leases.services import (
+    accept_single_lease_renewal,
     create_lease,
+    discard_single_lease_renewal,
     get_all_leases,
     get_single_lease,
     update_single_lease,
-    accept_single_lease_renewal,
-    discard_single_lease_renewal
 )
+from src.apps.properties.services import get_single_property
 from src.apps.users.models import User
+from src.core.exceptions import AuthorizationException
 from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
 from src.core.permissions import check_if_staff, check_if_staff_or_owner
-from src.core.exceptions import AuthorizationException
 from src.dependencies.get_db import get_db
 from src.dependencies.user import authenticate_user
 
@@ -40,7 +41,8 @@ async def post_lease(
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
 ) -> LeaseBasicOutputSchema:
-    await check_if_staff(request_user)
+    property = await get_single_property(session, lease.property_id)
+    await check_if_staff_or_owner(request_user, "id", property.owner_id)
     return await create_lease(session, lease)
 
 
@@ -57,9 +59,11 @@ async def get_every_lease(
 ) -> PagedResponseSchema[LeaseBasicOutputSchema]:
     await check_if_staff(request_user)
     return await get_all_leases(
-        session, page_params,
+        session,
+        page_params,
         query_params=request.query_params.multi_items(),
     )
+
 
 @lease_router.get(
     "/",
@@ -74,9 +78,12 @@ async def get_active_leases(
 ) -> PagedResponseSchema[LeaseBasicOutputSchema]:
     await check_if_staff(request_user)
     return await get_all_leases(
-        session, page_params, get_active=True,
+        session,
+        page_params,
+        get_active=True,
         query_params=request.query_params.multi_items(),
     )
+
 
 @lease_router.get(
     "/owner-leases",
@@ -90,9 +97,12 @@ async def get_user_owner_leases(
     request_user: User = Depends(authenticate_user),
 ) -> PagedResponseSchema[LeaseBasicOutputSchema]:
     return await get_all_leases(
-        session, page_params, user_id_owner_leases=request_user.id,
+        session,
+        page_params,
+        user_id_owner_leases=request_user.id,
         query_params=request.query_params.multi_items(),
     )
+
 
 @lease_router.get(
     "/tenant-leases",
@@ -106,9 +116,12 @@ async def get_user_tenant_leases(
     request_user: User = Depends(authenticate_user),
 ) -> PagedResponseSchema[LeaseBasicOutputSchema]:
     return await get_all_leases(
-        session, page_params, user_id_tenant_leases=request_user.id,
+        session,
+        page_params,
+        user_id_tenant_leases=request_user.id,
         query_params=request.query_params.multi_items(),
     )
+
 
 @lease_router.get(
     "/with-renewals",
@@ -123,27 +136,23 @@ async def get_leases_with_renewal_accepted(
 ) -> PagedResponseSchema[LeaseBasicOutputSchema]:
     await check_if_staff(request_user)
     return await get_all_leases(
-        session, page_params, get_with_renewal_accepted=True,
+        session,
+        page_params,
+        get_with_renewal_accepted=True,
         query_params=request.query_params.multi_items(),
     )
 
 
 @lease_router.get(
     "/{lease_id}",
-    response_model=Union[
-        LeaseOutputSchema,
-        LeaseBasicOutputSchema
-        ],
+    response_model=Union[LeaseOutputSchema, LeaseBasicOutputSchema],
     status_code=status.HTTP_200_OK,
 )
 async def get_lease(
     lease_id: str,
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
-) -> Union[
-        LeaseOutputSchema,
-        LeaseBasicOutputSchema
-        ]:
+) -> Union[LeaseOutputSchema, LeaseBasicOutputSchema]:
     lease = await get_single_lease(session, lease_id)
     if (
         request_user.is_staff
@@ -188,11 +197,11 @@ async def accept_lease_renewal(
         await accept_single_lease_renewal(session, lease_id)
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={"message": "The lease renewal has been accepted! "}
+            content={"message": "The lease renewal has been accepted! "},
         )
-    raise AuthorizationException("You don't have permissions to perform this action!" )
-    
-    
+    raise AuthorizationException("You don't have permissions to perform this action!")
+
+
 @lease_router.patch(
     "/{lease_id}/discard-renewal",
     status_code=status.HTTP_200_OK,
@@ -211,7 +220,6 @@ async def discard_lease_renewal(
         await discard_single_lease_renewal(session, lease_id)
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={"message": "The lease renewal has been discarded! "}
+            content={"message": "The lease renewal has been discarded! "},
         )
-    raise AuthorizationException("You don't have permissions to perform this action!" )
-
+    raise AuthorizationException("You don't have permissions to perform this action!")

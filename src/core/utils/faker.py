@@ -1,11 +1,20 @@
 import random
-from decimal import Decimal
 
 from faker import Faker
-from faker.providers import address, date_time, internet, lorem, misc, person, phone_number, bank
+from faker.providers import (
+    address,
+    bank,
+    date_time,
+    internet,
+    lorem,
+    misc,
+    person,
+    phone_number,
+)
 from faker_commerce import Provider as commerce_provider
-from src.apps.properties.enums import PropertyStatusEnum, PropertyTypeEnum
+
 from src.apps.leases.enums import BillingPeriodEnum
+from src.apps.properties.enums import PropertyStatusEnum, PropertyTypeEnum
 
 
 def initialize_faker():
@@ -58,4 +67,3 @@ def set_random_rent_amount() -> int:
 
 def set_random_initial_deposit_amount() -> int:
     return random.randint(500, 5000)
-

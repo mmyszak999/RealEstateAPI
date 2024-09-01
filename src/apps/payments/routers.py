@@ -6,10 +6,10 @@ from fastapi.routing import APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.apps.payments.schemas import (
+    PaymentBaseOutputSchema,
     PaymentOutputSchema,
     StripePublishableKeySchema,
     StripeSessionSchema,
-    PaymentBaseOutputSchema
 )
 from src.apps.payments.services import (
     get_all_payments,
@@ -38,7 +38,7 @@ payment_router = APIRouter(prefix="/payments", tags=["payment"])
 async def handle_webhook_event(
     request: Request,
     background_tasks: BackgroundTasks,
-    session: AsyncSession = Depends(get_db)
+    session: AsyncSession = Depends(get_db),
 ) -> None:
     return await handle_stripe_webhook_event(session, request, background_tasks)
 
@@ -47,8 +47,8 @@ async def handle_webhook_event(
     "/all",
     response_model=Union[
         PagedResponseSchema[PaymentBaseOutputSchema],
-        PagedResponseSchema[PaymentOutputSchema]
-],
+        PagedResponseSchema[PaymentOutputSchema],
+    ],
     status_code=status.HTTP_200_OK,
 )
 async def get_payments(
@@ -57,19 +57,21 @@ async def get_payments(
     page_params: PageParams = Depends(),
     request_user: User = Depends(authenticate_user),
 ) -> Union[
-        PagedResponseSchema[PaymentBaseOutputSchema],
-        PagedResponseSchema[PaymentOutputSchema]
+    PagedResponseSchema[PaymentBaseOutputSchema],
+    PagedResponseSchema[PaymentOutputSchema],
 ]:
     await check_if_staff(request_user)
-    return await get_all_payments(session, page_params, request.query_params.multi_items())
+    return await get_all_payments(
+        session, page_params, request.query_params.multi_items()
+    )
 
 
 @payment_router.get(
     "/accepted",
     response_model=Union[
         PagedResponseSchema[PaymentBaseOutputSchema],
-        PagedResponseSchema[PaymentOutputSchema]
-],
+        PagedResponseSchema[PaymentOutputSchema],
+    ],
     status_code=status.HTTP_200_OK,
 )
 async def get_accepted_payments(
@@ -78,19 +80,21 @@ async def get_accepted_payments(
     page_params: PageParams = Depends(),
     request_user: User = Depends(authenticate_user),
 ) -> Union[
-        PagedResponseSchema[PaymentBaseOutputSchema],
-        PagedResponseSchema[PaymentOutputSchema]
+    PagedResponseSchema[PaymentBaseOutputSchema],
+    PagedResponseSchema[PaymentOutputSchema],
 ]:
     await check_if_staff(request_user)
-    return await get_all_payments(session, page_params, request.query_params.multi_items(), get_accepted=True)
+    return await get_all_payments(
+        session, page_params, request.query_params.multi_items(), get_accepted=True
+    )
 
 
 @payment_router.get(
     "/waiting",
     response_model=Union[
         PagedResponseSchema[PaymentBaseOutputSchema],
-        PagedResponseSchema[PaymentOutputSchema]
-],
+        PagedResponseSchema[PaymentOutputSchema],
+    ],
     status_code=status.HTTP_200_OK,
 )
 async def get_waiting_payments(
@@ -99,19 +103,21 @@ async def get_waiting_payments(
     page_params: PageParams = Depends(),
     request_user: User = Depends(authenticate_user),
 ) -> Union[
-        PagedResponseSchema[PaymentBaseOutputSchema],
-        PagedResponseSchema[PaymentOutputSchema]
+    PagedResponseSchema[PaymentBaseOutputSchema],
+    PagedResponseSchema[PaymentOutputSchema],
 ]:
     await check_if_staff(request_user)
-    return await get_all_payments(session, page_params, request.query_params.multi_items(), get_waiting=True)
+    return await get_all_payments(
+        session, page_params, request.query_params.multi_items(), get_waiting=True
+    )
 
 
 @payment_router.get(
     "/my-payments",
     response_model=Union[
         PagedResponseSchema[PaymentBaseOutputSchema],
-        PagedResponseSchema[PaymentOutputSchema]
-],
+        PagedResponseSchema[PaymentOutputSchema],
+    ],
     status_code=status.HTTP_200_OK,
 )
 async def get_user_payments(
@@ -120,11 +126,14 @@ async def get_user_payments(
     page_params: PageParams = Depends(),
     request_user: User = Depends(authenticate_user),
 ) -> Union[
-        PagedResponseSchema[PaymentBaseOutputSchema],
-        PagedResponseSchema[PaymentOutputSchema]
+    PagedResponseSchema[PaymentBaseOutputSchema],
+    PagedResponseSchema[PaymentOutputSchema],
 ]:
     return await get_all_payments(
-        session, page_params, request.query_params.multi_items(), tenant_id=request_user.id
+        session,
+        page_params,
+        request.query_params.multi_items(),
+        tenant_id=request_user.id,
     )
 
 

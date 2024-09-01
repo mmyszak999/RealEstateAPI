@@ -22,5 +22,6 @@ class Company(Base):
     foundation_year = Column(Integer, nullable=False)
     phone_number = Column(String(length=50), nullable=False)
     users = relationship("User", back_populates="company", lazy="joined")
-    address = relationship("Address", uselist=False, back_populates="company", lazy="subquery")
-    
+    address = relationship(
+        "Address", uselist=False, back_populates="company", lazy="subquery"
+    )

@@ -1,5 +1,3 @@
-from typing import Any
-
 from fastapi import BackgroundTasks
 from fastapi_mail import FastMail, MessageSchema
 from itsdangerous import URLSafeTimedSerializer

@@ -35,3 +35,17 @@ db-root-shell:
 
 superuser:
 	docker-compose exec web bash -c "bash ./app_scripts/create_superuser.sh main_db"
+
+isort:
+		isort tests
+		isort src
+		isort main.py
+
+black:
+		black tests
+		black src
+		black main.py
+
+linters:
+		make isort
+		make black

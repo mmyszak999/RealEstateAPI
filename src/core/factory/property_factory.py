@@ -1,21 +1,17 @@
-from datetime import date
 from decimal import Decimal
 from typing import Optional
 
+from src.apps.properties.enums import PropertyStatusEnum, PropertyTypeEnum
 from src.apps.properties.schemas import PropertyInputSchema, PropertyUpdateSchema
-from src.apps.properties.enums import PropertyTypeEnum, PropertyStatusEnum
 from src.core.factory.core import SchemaFactory
 from src.core.utils.faker import (
+    set_random_foundation_year,
     set_random_property_status,
     set_random_property_type,
-    PropertyStatusEnum,
-    PropertyTypeEnum,
-    set_random_foundation_year,
-    set_random_square_meter_amount,
+    set_random_property_value,
     set_random_rooms_amount,
-    set_random_property_value
+    set_random_square_meter_amount,
 )
-
 
 
 class PropertyInputSchemaFactory(SchemaFactory):
@@ -31,8 +27,8 @@ class PropertyInputSchemaFactory(SchemaFactory):
         rooms_amount: Optional[int] = None,
         year_built: Optional[int] = None,
         owner_id: Optional[str] = None,
-        description: Optional[str]  = None,
-        property_value: Decimal = None
+        description: Optional[str] = None,
+        property_value: Decimal = None,
     ):
         return self.schema_class(
             property_status=property_status or set_random_property_status(),
@@ -43,7 +39,7 @@ class PropertyInputSchemaFactory(SchemaFactory):
             year_built=year_built or set_random_foundation_year(),
             owner_id=owner_id,
             description=description or self.faker.sentence(),
-            property_value=property_value or set_random_property_value()
+            property_value=property_value or set_random_property_value(),
         )
 
 
@@ -58,8 +54,8 @@ class PropertyUpdateSchemaFactory(SchemaFactory):
         short_description: Optional[str] = None,
         square_meter: Optional[Decimal] = None,
         rooms_amount: Optional[int] = None,
-        description: Optional[str]  = None,
-        property_value: Optional[Decimal] = None
+        description: Optional[str] = None,
+        property_value: Optional[Decimal] = None,
     ):
         return self.schema_class(
             property_status=property_status,

@@ -3,8 +3,8 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, EmailStr, Field, validator
 
-from src.apps.users.schemas import UserInfoOutputSchema
 from src.apps.addresses.schemas import AddressBasicOutputSchema
+from src.apps.users.schemas import UserInfoOutputSchema
 
 
 class CompanyBaseSchema(BaseModel):
@@ -33,7 +33,7 @@ class CompanyUpdateSchema(BaseModel):
 
 class CompanyBasicOutputSchema(CompanyInputSchema):
     id: str
-    
+
     class Config:
         orm_mode = True
 
