@@ -28,7 +28,7 @@ https://chocolatey.org/
 1. Clone repository:
 `$ git clone https://github.com/mmyszak999/RealEstateAPI/`
 2. In the main directory create '.env' file
-3. In '.env' set the values of environment variables (you can copy the content from '.env.template' file, but you still need to get real data from your mailing service and stripe account)
+3. In '.env' set the values of environment variables (you can copy the content from '.env.example' file, but you still need to get real data from your mailing service and stripe account)
 4. To build the project, in the root directory type:
 `$ make build`
 5. In order to run project type: 
