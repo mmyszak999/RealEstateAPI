@@ -22,7 +22,7 @@ async def test_raise_validation_error_when_creating_lease_and_entered_incorrect_
 async def test_raise_validation_error_when_creating_lease_and_entered_past_start_date():
     with pytest.raises(ValidationError):
         LeaseInputSchemaFactory().generate(
-            start_date=date.today() - timedelta(days=1),
+            start_date=date.today() - timedelta(days=5),
             property_id=generate_uuid(),
             owner_id=generate_uuid(),
             tenant_id=generate_uuid()
@@ -32,7 +32,8 @@ async def test_raise_validation_error_when_creating_lease_and_entered_past_start
 async def test_raise_validation_error_when_creating_lease_and_entered_past_end_date():
     with pytest.raises(ValidationError):
         LeaseInputSchemaFactory().generate(
-            end_date=date.today() - timedelta(days=1),
+            start_date=date.today() + timedelta(days=5),
+            end_date=date.today() - timedelta(days=6),
             property_id=generate_uuid(),
             owner_id=generate_uuid(),
             tenant_id=generate_uuid()
