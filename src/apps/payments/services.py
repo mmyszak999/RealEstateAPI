@@ -38,10 +38,13 @@ from src.settings.stripe import settings as stripe_settings
 async def create_payment(
     session: AsyncSession, lease: Lease, background_tasks: BackgroundTasks
 ) -> PaymentOutputSchema:
+    """
+    payment is created automatically and cannot be created via http request
+    """
     new_payment = Payment(
         created_at=datetime.date.today(),
         lease_id=lease.id,
-        tenant_id=lease.tenant_id,
+        tenant_id=lease.tenant_id
     )
     session.add(new_payment)
     await session.flush()
@@ -60,6 +63,7 @@ async def create_payment(
     session.add(lease)
     
     await session.commit()
+    
     body_schema = PaymentAwaitSchema(
         lease_id=lease.id,
         payment_id=new_payment.id,
@@ -151,12 +155,17 @@ async def create_checkout_session(
     
 
 async def get_stripe_session_data(session: AsyncSession, payment_id: str) -> StripeSessionSchema:
+    """
+    creates stripe checkout session with the payment url
+    """
+    
     if not (payment_object := await if_exists(Payment, "id", payment_id, session)):
         raise DoesNotExist(Payment.__name__, "id", payment_id)
     
     if payment_object.payment_accepted or (not payment_object.waiting_for_payment):
         raise PaymentAlreadyAccepted
 
+    
     price_data = {
             "price_data": {
                 "currency": "usd",
@@ -183,6 +192,11 @@ async def handle_stripe_webhook_event(
     background_tasks: BackgroundTasks,
     settings: BaseSettings=stripe_settings
 ):
+    """
+    after successful payment in the stripe checkout via checkout url
+    the transaction is being processed via webhook and then
+    the payment object is being updated as the payment becomes accepted
+    """
     endpoint_secret = settings.WEBHOOK_SECRET
     payload = await request.body()
     sig_header = request.headers["stripe-signature"]
@@ -203,7 +217,9 @@ async def handle_stripe_webhook_event(
 async def fulfill_payment(
     session: AsyncSession, stripe_session, payment_intent, background_tasks: BackgroundTasks
 ) -> None:
-    print(stripe_session, "gang", payment_intent)
+    """
+    updates the payment object data after the successful payment via stripe
+    """
     payment_id = stripe_session["metadata"]["payment_id"]
     amount = payment_intent["amount"] / 100
     stripe_charge_id = payment_intent["latest_charge"]
@@ -230,11 +246,7 @@ async def fulfill_payment(
         created_at=payment_object.created_at,
         payment_checkout_url=payment_object.payment_checkout_url
     )
-    print("gg", body_schema)
     await send_payment_confirmation_mail(
         payment_object.tenant.email, session, background_tasks, body_schema
     )
-    
-    
-    
     

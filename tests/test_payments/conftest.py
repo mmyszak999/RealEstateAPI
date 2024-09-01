@@ -30,10 +30,14 @@ from src.apps.users.models import User
 from src.apps.properties.models import Property
 from src.apps.leases.models import Lease
 
+"""
+one payment object related to the property with the active lease
+"""
 
 async def get_stripe_session_data(
     payment: PaymentOutputSchema
 ) -> dict[str, Any]:
+    
     STRIPE_SESSION_DATA = {
         "id": "cs_test_id",
         "object": "checkout.session",
@@ -49,7 +53,8 @@ async def get_stripe_session_data(
 
 async def get_payment_intent_data(
     lease: Lease
-) -> dict[str, Any]:   
+) -> dict[str, Any]:  
+     
     PAYMENT_INTENT_DATA = {
     "id": "test_payment_intent_id",
     "object": "payment_intent",

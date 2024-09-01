@@ -33,6 +33,10 @@ from src.apps.users.models import User
 async def create_address(
     session: AsyncSession, address_input: AddressInputSchema
 ) -> AddressOutputSchema:
+    """
+        single address can be created for company or property object
+        but not for both or none of them
+    """
     company_object = None
     property_object = None
 
