@@ -38,7 +38,7 @@ async def test_every_user_can_create_new_account(
     async_client: AsyncClient,
     user_headers: dict[str, str],
     user: UserOutputSchema,
-    status_code: int
+    status_code: int,
 ):
     user_input_data = UserRegisterSchemaFactory().generate()
     response = await async_client.post(
@@ -46,7 +46,6 @@ async def test_every_user_can_create_new_account(
     )
     assert response.status_code == status_code
     assert response.json()["email"] == user_input_data.email
-
 
 
 @pytest.mark.asyncio
@@ -83,13 +82,14 @@ async def test_only_staff_can_get_active_users(
     user: UserOutputSchema,
     user_headers: dict[str, str],
     status_code: int,
-    db_superuser: UserOutputSchema
+    db_superuser: UserOutputSchema,
 ):
     response = await async_client.get("users/", headers=user_headers)
 
     assert response.status_code == status_code
     if status_code == status.HTTP_200_OK:
         assert response.json()["total"] == 2
+
 
 @pytest.mark.parametrize(
     "user, user_headers, status_code",

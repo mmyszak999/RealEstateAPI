@@ -20,7 +20,7 @@ class AddressInputSchemaFactory(SchemaFactory):
         house_number: str = None,
         apartment_number: str = None,
         property_id: str = None,
-        company_id: str = None
+        company_id: str = None,
     ):
         return self.schema_class(
             country=country or self.faker.country(),
@@ -31,8 +31,9 @@ class AddressInputSchemaFactory(SchemaFactory):
             house_number=house_number or self.faker.building_number(),
             apartment_number=apartment_number or self.faker.building_number(),
             company_id=company_id,
-            property_id=property_id
+            property_id=property_id,
         )
+
 
 class AddressUpdateSchemaFactory(SchemaFactory):
     def __init__(self, schema_class=AddressUpdateSchema):
@@ -46,7 +47,7 @@ class AddressUpdateSchemaFactory(SchemaFactory):
         postal_code: str = None,
         street: str = None,
         house_number: str = None,
-        apartment_number: str = None
+        apartment_number: str = None,
     ):
         return self.schema_class(
             country=country,
@@ -55,5 +56,5 @@ class AddressUpdateSchemaFactory(SchemaFactory):
             postal_code=postal_code,
             street=street,
             house_number=house_number,
-            apartment_number=apartment_number
+            apartment_number=apartment_number,
         )

@@ -78,8 +78,6 @@ async def deactivate_single_user(
     await manage_activation_status(session, "id", user_id, activate=False)
 
 
-async def activate_account_service(
-    session: AsyncSession, token: str
-) -> None:
+async def activate_account_service(session: AsyncSession, token: str) -> None:
     user_email = await retrieve_email_from_token(session, token)
     await activate_single_user_by_link(session, "email", user_email)

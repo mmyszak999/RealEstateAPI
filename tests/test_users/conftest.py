@@ -1,20 +1,22 @@
-import subprocess
 import asyncio
+import subprocess
 
 import pytest
 import pytest_asyncio
-from sqlalchemy import select
 from fastapi import BackgroundTasks
 from fastapi_jwt_auth import AuthJWT
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
-from src.apps.users.schemas import UserRegisterSchema, UserOutputSchema
-from src.apps.users.services.user_services import create_user_base, get_single_user, get_all_users
-from src.core.factory.user_factory import (
-    UserRegisterSchemaFactory
-)
-from src.core.pagination.models import PageParams
 from src.apps.users.models import User
+from src.apps.users.schemas import UserOutputSchema, UserRegisterSchema
+from src.apps.users.services.user_services import (
+    create_user_base,
+    get_all_users,
+    get_single_user,
+)
+from src.core.factory.user_factory import UserRegisterSchemaFactory
+from src.core.pagination.models import PageParams
 
 DB_USER_SCHEMA = UserRegisterSchemaFactory().generate()
 
@@ -28,20 +30,19 @@ async def create_user_without_activation(
     user_schema: UserRegisterSchema,
     is_active: bool = True,
     is_staff: bool = False,
-    is_superuser: bool = False
+    is_superuser: bool = False,
 ):
     new_user = await create_user_base(async_session, user_schema)
     new_user.is_active = is_active
     new_user.is_staff = is_staff
     new_user.is_superuser = is_superuser
-    
+
     async_session.add(new_user)
 
     await async_session.commit()
     await async_session.refresh(new_user)
 
     return UserOutputSchema.from_orm(new_user)
-
 
 
 @pytest_asyncio.fixture
@@ -56,6 +57,7 @@ async def db_staff_user(async_session: AsyncSession) -> UserOutputSchema:
         DB_STAFF_USER_SCHEMA,
         is_staff=True,
     )
+
 
 @pytest_asyncio.fixture
 async def db_superuser(async_session: AsyncSession) -> UserOutputSchema:

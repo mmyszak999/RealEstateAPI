@@ -1,16 +1,14 @@
 import datetime as dt
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Column, Date, ForeignKey, Integer, String, DECIMAL
+from sqlalchemy import DECIMAL, Boolean, Column, Date
+from sqlalchemy import Enum as SQLAlchemyEnum
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import DateTime
-from sqlalchemy import Enum as SQLAlchemyEnum
 
 from src.apps.leases.enums import BillingPeriodEnum
-from src.core.utils.orm import (
-    default_lease_expiration_date,
-    default_next_payment_date
-)
+from src.core.utils.orm import default_lease_expiration_date, default_next_payment_date
 from src.core.utils.utils import generate_uuid
 from src.database.db_connection import Base
 
@@ -31,11 +29,13 @@ class Lease(Base):
     initial_deposit_amount = Column(DECIMAL, nullable=False, default=Decimal(0))
     renewal_accepted = Column(Boolean, nullable=False, default=False)
     lease_expired = Column(Boolean, nullable=False, default=False)
-    lease_expiration_date = Column(Date, nullable=True, default=default_lease_expiration_date)
+    lease_expiration_date = Column(
+        Date, nullable=True, default=default_lease_expiration_date
+    )
     billing_period = Column(
         SQLAlchemyEnum(BillingPeriodEnum),
         nullable=False,
-        default=BillingPeriodEnum.MONTHLY
+        default=BillingPeriodEnum.MONTHLY,
     )
     next_payment_date = Column(Date, nullable=True, default=default_next_payment_date)
     payment_bank_account = Column(String(length=75), nullable=False)
@@ -44,18 +44,21 @@ class Lease(Base):
         ForeignKey("user.id", ondelete="SET NULL", onupdate="cascade"),
         nullable=True,
     )
-    tenant = relationship("User", back_populates="tenant_leases", lazy="joined", foreign_keys=[tenant_id])
+    tenant = relationship(
+        "User", back_populates="tenant_leases", lazy="joined", foreign_keys=[tenant_id]
+    )
     owner_id = Column(
         String(length=50),
         ForeignKey("user.id", ondelete="SET NULL", onupdate="cascade"),
         nullable=True,
     )
-    owner = relationship("User", back_populates="owner_leases", lazy="joined", foreign_keys=[owner_id])
-    property = relationship("Property", back_populates="leases", lazy="joined")
+    owner = relationship(
+        "User", back_populates="owner_leases", lazy="joined", foreign_keys=[owner_id]
+    )
+    property = relationship("Property", back_populates="leases", lazy="selectin")
     property_id = Column(
         String(length=50),
         ForeignKey("property.id", ondelete="SET NULL", onupdate="cascade"),
         nullable=True,
     )
-    payments = relationship("Payment", back_populates="lease", lazy='joined')
-    
+    payments = relationship("Payment", back_populates="lease", lazy="selectin")

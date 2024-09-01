@@ -3,29 +3,28 @@ from fastapi import status
 from fastapi_jwt_auth import AuthJWT
 from httpx import AsyncClient, Response
 
-from src.apps.users.schemas import UserOutputSchema, UserIdSchema
 from src.apps.leases.schemas import LeaseOutputSchema
+from src.apps.leases.services import get_all_leases
+from src.apps.properties.schemas import PropertyOutputSchema
+from src.apps.users.schemas import UserIdSchema, UserOutputSchema
 from src.core.factory.lease_factory import (
     LeaseInputSchemaFactory,
     LeaseUpdateSchemaFactory,
 )
-from src.apps.leases.services import get_all_leases
+from src.core.pagination.schemas import PagedResponseSchema
+from tests.test_addresses.conftest import db_addresses
+from tests.test_companies.conftest import db_companies
+from tests.test_leases.conftest import db_leases
+from tests.test_properties.conftest import db_properties
 from tests.test_users.conftest import (
     DB_USER_SCHEMA,
     auth_headers,
     db_staff_user,
-    db_user,
     db_superuser,
+    db_user,
     staff_auth_headers,
-    superuser_auth_headers
+    superuser_auth_headers,
 )
-from tests.test_leases.conftest import db_leases
-from tests.test_addresses.conftest import db_addresses
-from tests.test_companies.conftest import db_companies
-from tests.test_properties.conftest import db_properties
-from src.core.pagination.schemas import PagedResponseSchema
-from src.apps.leases.schemas import LeaseOutputSchema
-from src.apps.properties.schemas import PropertyOutputSchema
 
 
 @pytest.mark.parametrize(
@@ -50,15 +49,15 @@ async def test_only_staff_user_can_create_lease(
     user: UserOutputSchema,
     user_headers: dict[str, str],
     status_code: int,
-    db_properties: PagedResponseSchema[PropertyOutputSchema]
+    db_properties: PagedResponseSchema[PropertyOutputSchema],
 ):
     available_property = [
-        property for property in db_properties.results if property.owner_id == db_superuser.id
+        property
+        for property in db_properties.results
+        if property.owner_id == db_superuser.id
     ][0]
     lease_data = LeaseInputSchemaFactory().generate(
-        property_id=available_property.id,
-        owner_id=db_superuser.id,
-        tenant_id=user.id
+        property_id=available_property.id, owner_id=db_superuser.id, tenant_id=user.id
     )
     response = await async_client.post(
         "leases/", headers=user_headers, content=lease_data.json()
@@ -123,7 +122,6 @@ async def test_only_staff_user_can_get_all_leases(
     assert response.status_code == status_code
 
 
-
 @pytest.mark.parametrize(
     "user, user_headers, status_code",
     [
@@ -150,7 +148,6 @@ async def test_authenticated_user_can_get_their_owner_leases(
     response = await async_client.get("leases/owner-leases", headers=user_headers)
 
     assert response.status_code == status_code
-
 
 
 @pytest.mark.parametrize(
@@ -310,15 +307,13 @@ async def test_only_staff_or_owner_can_accept_or_discard_lease_renewal(
     status_code: int,
 ):
     response = await async_client.patch(
-        f"leases/{db_leases.results[0].id}/accept-renewal",
-        headers=user_headers
+        f"leases/{db_leases.results[0].id}/accept-renewal", headers=user_headers
     )
 
     assert response.status_code == status_code
-    
+
     response = await async_client.patch(
-        f"leases/{db_leases.results[0].id}/discard-renewal",
-        headers=user_headers
+        f"leases/{db_leases.results[0].id}/discard-renewal", headers=user_headers
     )
 
     assert response.status_code == status_code

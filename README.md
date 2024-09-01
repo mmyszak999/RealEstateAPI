@@ -48,6 +48,13 @@ After that you can use the project.
 * In the Stripe checkout type test card number:
 4242 4242 4242 4242, rest of the data does not matter
 * Use the swagger (localhost:8000/docs) in order to check the json shape, schema fields and endpoint names
+* In order to pay rent when SEND_EMAILS=False, you need to go to the detail payment view (api/payments/{payment_id}), copy the link in the 'payment_checkout_url' field end open it (you will see stripe checkout site). After successful transaction you can check the payment details another time and you should see the payment_accepted=True
+* API offers extra features such as:
+    - filtering - example: /api/users/?first_name__ge=chris&birth_date__lt=2000-01-01&is_active__eq=True
+    - sorting - example: /api/users/?sort=last_name__asc,birth_date__desc
+    - pagination - example: /api/users/?page=2&size=10
+    
+
 
 
 

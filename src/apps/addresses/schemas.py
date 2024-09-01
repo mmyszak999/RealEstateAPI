@@ -34,10 +34,10 @@ class AddressUpdateSchema(BaseModel):
 
 class AddressBasicOutputSchema(AddressBaseSchema):
     id: str
-    
+
     class Config:
         orm_mode = True
-    
+
 
 class AddressOutputSchema(AddressBasicOutputSchema):
     pass

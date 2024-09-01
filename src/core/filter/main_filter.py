@@ -1,8 +1,8 @@
 import operator
-from distutils.util import strtobool
 from datetime import datetime
+from distutils.util import strtobool
 
-from sqlalchemy import Boolean, Integer, String, cast, Date
+from sqlalchemy import Boolean, Date, Integer, cast
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import Select
 
@@ -46,7 +46,7 @@ class Filter(Select):
         if isinstance(attr_check.type, Integer):
             other = int(other)
         if isinstance(attr_check.type, Date):
-            other = datetime.strptime(other, '%Y-%m-%d').date()
+            other = datetime.strptime(other, "%Y-%m-%d").date()
         else:
             other = cast(other, attr_check.type)
         return other

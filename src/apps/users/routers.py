@@ -7,13 +7,14 @@ from fastapi_jwt_auth import AuthJWT
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.apps.jwt.schemas import AccessTokenOutputSchema
+from src.apps.leases.services import get_all_leases
 from src.apps.users.models import User
 from src.apps.users.schemas import (
     UserInfoOutputSchema,
     UserLoginInputSchema,
     UserOutputSchema,
+    UserRegisterSchema,
     UserUpdateSchema,
-    UserRegisterSchema
 )
 from src.apps.users.services.activation_services import (
     activate_single_user,
@@ -26,7 +27,6 @@ from src.apps.users.services.user_services import (
     get_single_user,
     update_single_user,
 )
-from src.apps.leases.services import get_all_leases
 from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
 from src.core.permissions import check_if_staff, check_if_staff_or_owner
@@ -38,20 +38,23 @@ user_router = APIRouter(prefix="/users", tags=["users"])
 """
 use endpoint if you want to create a user and use the account immediately
 """
+
+
 @user_router.post(
     "/create", response_model=UserInfoOutputSchema, status_code=status.HTTP_201_CREATED
 )
 async def create_user(
     user_input: UserRegisterSchema,
     background_tasks: BackgroundTasks,
-    session: AsyncSession = Depends(get_db)
+    session: AsyncSession = Depends(get_db),
 ) -> UserInfoOutputSchema:
     return await create_single_user(session, user_input, background_tasks)
+
 
 """
 use endpoint if you want to create a user and go through the activation process
 """
-@user_router.post(
+"""@user_router.post(
     "/create-with-email-activation",
     response_model=UserInfoOutputSchema,
     status_code=status.HTTP_201_CREATED
@@ -63,7 +66,7 @@ async def create_user_with_activation(
 ) -> UserInfoOutputSchema:
     return await create_single_user(
         session, user_input, background_tasks, with_email_activation=True
-        )
+        )"""
 
 
 @user_router.post(
@@ -102,9 +105,10 @@ async def get_users(
 ) -> PagedResponseSchema[UserInfoOutputSchema]:
     await check_if_staff(request_user)
     return await get_all_users(
-        session, page_params, 
+        session,
+        page_params,
         output_schema=UserInfoOutputSchema,
-        query_params=request.query_params.multi_items()
+        query_params=request.query_params.multi_items(),
     )
 
 
@@ -152,7 +156,7 @@ async def update_user(
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
 ) -> UserInfoOutputSchema:
-    if (await check_if_staff_or_owner(request_user, "id", user_id)):
+    if await check_if_staff_or_owner(request_user, "id", user_id):
         return await update_single_user(session, user_input, user_id)
 
 
@@ -172,6 +176,7 @@ async def deactivate_user(
         status_code=status.HTTP_200_OK,
         content={"message": "The account has been deactivated!"},
     )
+
 
 @user_router.patch(
     "/{user_id}/activate",

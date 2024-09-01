@@ -60,7 +60,9 @@ class UserUpdateSchema(BaseModel):
     phone_number: Optional[str]
 
     @validator("birth_date")
-    def validate_birth_date(cls, birth_date: Optional[datetime.date]) -> Optional[datetime.date]:
+    def validate_birth_date(
+        cls, birth_date: Optional[datetime.date]
+    ) -> Optional[datetime.date]:
         if birth_date and (birth_date >= datetime.date.today()):
             raise ValueError("Birth date must be in the past")
         return birth_date
@@ -86,8 +88,8 @@ class UserCompanyOutputSchema(BaseModel):
 
     class Config:
         orm_mode = True
-        
-        
+
+
 class UserOutputSchema(UserInputSchema):
     id: str
     is_active: bool

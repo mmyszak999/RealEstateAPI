@@ -1,23 +1,23 @@
 from typing import Union
 
 from fastapi import Depends, Request, Response, status
-from fastapi.routing import APIRouter
 from fastapi.responses import JSONResponse
+from fastapi.routing import APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.apps.properties.schemas import (
+    PropertyBasicOutputSchema,
     PropertyInputSchema,
     PropertyOutputSchema,
+    PropertyOwnerIdSchema,
     PropertyUpdateSchema,
-    PropertyBasicOutputSchema,
-    PropertyOwnerIdSchema
 )
 from src.apps.properties.services import (
+    change_property_owner,
     create_property,
     get_all_properties,
     get_single_property,
     update_single_property,
-    change_property_owner
 )
 from src.apps.users.models import User
 from src.core.pagination.models import PageParams
@@ -56,8 +56,11 @@ async def get_every_property(
 ) -> PagedResponseSchema[PropertyBasicOutputSchema]:
     await check_if_staff(request_user)
     return await get_all_properties(
-        session, page_params, query_params=request.query_params.multi_items(),
+        session,
+        page_params,
+        query_params=request.query_params.multi_items(),
     )
+
 
 @property_router.get(
     "/",
@@ -71,9 +74,12 @@ async def get_available_properties(
     request_user: User = Depends(authenticate_user),
 ) -> PagedResponseSchema[PropertyBasicOutputSchema]:
     return await get_all_properties(
-        session, page_params, get_available=True,
+        session,
+        page_params,
+        get_available=True,
         query_params=request.query_params.multi_items(),
     )
+
 
 @property_router.get(
     "/rented",
@@ -88,7 +94,9 @@ async def get_rented_properties(
 ) -> PagedResponseSchema[PropertyBasicOutputSchema]:
     await check_if_staff(request_user)
     return await get_all_properties(
-        session, page_params, get_rented=True,
+        session,
+        page_params,
+        get_rented=True,
         query_params=request.query_params.multi_items(),
     )
 
@@ -105,31 +113,29 @@ async def get_user_owner_leases(
     request_user: User = Depends(authenticate_user),
 ) -> PagedResponseSchema[PropertyBasicOutputSchema]:
     return await get_all_properties(
-        session, page_params, owner_id=request_user.id,
+        session,
+        page_params,
+        owner_id=request_user.id,
         query_params=request.query_params.multi_items(),
     )
 
 
 @property_router.get(
     "/{property_id}",
-    response_model=Union[
-        PropertyOutputSchema,
-        PropertyBasicOutputSchema
-        ],
+    response_model=Union[PropertyOutputSchema, PropertyBasicOutputSchema],
     status_code=status.HTTP_200_OK,
 )
 async def get_property(
     property_id: str,
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
-) -> Union[
-        PropertyOutputSchema,
-        PropertyBasicOutputSchema
-        ]:
+) -> Union[PropertyOutputSchema, PropertyBasicOutputSchema]:
     property = await get_single_property(session, property_id)
     if request_user.is_staff or getattr(request_user, "id") == property.owner_id:
         return property
-    return await get_single_property(session, property_id, output_schema=PropertyBasicOutputSchema)
+    return await get_single_property(
+        session, property_id, output_schema=PropertyBasicOutputSchema
+    )
 
 
 @property_router.patch(
