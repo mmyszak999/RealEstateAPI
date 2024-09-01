@@ -22,7 +22,7 @@ def default_next_payment_date(context):
     billing_period = context.get_current_parameters()["billing_period"]
     end_date = context.get_current_parameters().get("end_date", None)
 
-    next_payment = get_billing_period_time_span_between_payments(
+    next_payment, _ = get_billing_period_time_span_between_payments(
         start_date, billing_period
         )
 
@@ -32,11 +32,15 @@ def default_next_payment_date(context):
  
  
 def get_billing_period_time_span_between_payments(start_date: date, billing_period: BillingPeriodEnum) -> date:
+    time_span_in_days = None
     if billing_period == BillingPeriodEnum.WEEKLY:
         next_payment = start_date + timedelta(days=7)
+        time_span_in_days=7
     if billing_period == BillingPeriodEnum.MONTHLY:
         next_payment = start_date + timedelta(days=30)
+        time_span_in_days=30
     if billing_period == BillingPeriodEnum.YEARLY:
         next_payment = start_date + timedelta(days=365)
+        time_span_in_days=365
         
-    return next_payment
+    return next_payment, time_span_in_days

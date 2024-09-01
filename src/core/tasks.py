@@ -31,7 +31,7 @@ async def _manage_leases_with_incoming_payment_date():
         await manage_leases_with_incoming_payment_date(session, BackgroundTasks())
 
 
-scheduler = AsyncIOScheduler()
+scheduler = AsyncIOScheduler(job_defaults={'max_instances': 2})
     
 scheduler.add_job(_manage_lease_renewals_and_expired_statuses, "interval", minutes=60*24)
 scheduler.add_job(_manage_property_statuses_for_lease_with_the_start_date_being_today, "interval", minutes=60*24)

@@ -72,7 +72,7 @@ async def get_payments(
 ],
     status_code=status.HTTP_200_OK,
 )
-async def get_payments(
+async def get_accepted_payments(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
@@ -93,7 +93,7 @@ async def get_payments(
 ],
     status_code=status.HTTP_200_OK,
 )
-async def get_payments(
+async def get_waiting_payments(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
@@ -114,7 +114,7 @@ async def get_payments(
 ],
     status_code=status.HTTP_200_OK,
 )
-async def get_payments(
+async def get_user_payments(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),

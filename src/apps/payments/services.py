@@ -55,7 +55,9 @@ async def create_payment(
     next_payment_date = get_billing_period_time_span_between_payments(
         lease.next_payment_date, lease.billing_period
     )
-    next_payment_date = min(next_payment_date, lease.lease_expiration_date)
+    next_payment_date, time_span = min(next_payment_date, lease.lease_expiration_date)
+    if (next_payment_date - lease.lease_expiration_date) < datetime.timedelta(days=time_span):
+        next_payment_date = None
     lease.next_payment_date = next_payment_date
     session.add(lease)
     
@@ -70,6 +72,7 @@ async def create_payment(
     )
     
     await send_awaiting_for_payment_mail(lease.tenant.email, session, background_tasks, body_schema)
+    return PaymentOutputSchema.from_orm(new_payment)
 
     
 async def get_single_payment(
