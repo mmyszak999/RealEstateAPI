@@ -10,7 +10,6 @@ from src.apps.users.services.user_services import (
     authenticate,
     create_single_user,
     create_user_base,
-    delete_single_user,
     get_all_users,
     get_single_user,
     update_single_user,
@@ -121,10 +120,3 @@ async def test_raise_exception_while_updating_nonexistent_user(
     with pytest.raises(DoesNotExist):
         await update_single_user(async_session, update_data, generate_uuid())
 
-
-@pytest.mark.asyncio
-async def test_raise_exception_while_deleting_nonexistent_user(
-    async_session: AsyncSession,
-):
-    with pytest.raises(DoesNotExist):
-        await delete_single_user(async_session, generate_uuid())

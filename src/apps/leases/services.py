@@ -337,7 +337,6 @@ async def manage_leases_with_incoming_payment_date(
     )
     leases_with_incoming_payments = await session.scalars(statement)
     leases_with_incoming_payments = leases_with_incoming_payments.unique().all()
-    print(leases_with_incoming_payments, "ww")
     [
         await create_payment(session, lease, background_tasks)
         for lease in leases_with_incoming_payments

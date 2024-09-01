@@ -4,7 +4,7 @@ API created in FastAPI and SQLAlchemy for managing properties, tenants and lease
 
 ## Tech stack
 * Python 3.9
-* FastAPI 3.2
+* FastAPI
 * SQLAlchemy
 * MySQL
 * Docker with Docker Compose
@@ -53,7 +53,7 @@ After that you can use the project.
     - filtering - example: /api/users/?first_name__ge=chris&birth_date__lt=2000-01-01&is_active__eq=True
     - sorting - example: /api/users/?sort=last_name__asc,birth_date__desc
     - pagination - example: /api/users/?page=2&size=10
-    
+
 
 
 
