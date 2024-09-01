@@ -22,8 +22,9 @@ from tests.test_properties.conftest import db_properties
 
 DB_COMPANIES_ADDRESSES_SCHEMAS = [AddressInputSchemaFactory().generate() for _ in range(2)]
 DB_PROPERTIES_ADDRESSES_SCHEMAS = [AddressInputSchemaFactory().generate() for _ in range(3)]
+
 """
-    every company and property got address except for the last one
+    every company and 2 properties out of 3 got address
 """
 
 @pytest_asyncio.fixture

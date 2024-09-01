@@ -46,6 +46,12 @@ from src.core.utils.orm import if_exists
 async def create_lease(
     session: AsyncSession, lease_input: LeaseInputSchema
 ) -> LeaseBasicOutputSchema:
+    
+    """
+    to create a lease we need to link property, owner and tenant
+    owner and tenant are User objects with separate foreign key
+    to decouple owner leases and tenant leases from themselves
+    """
     lease_data = lease_input.dict()
     if property_id := lease_data.get("property_id"):
         if not (property_object := await if_exists(Property, "id", property_id, session)):
@@ -78,6 +84,9 @@ async def create_lease(
         if not tenant_object.is_active:
             raise ServiceException("Inactive user cannot be assigned as a tenant! ")
     
+    """
+    check if there are active property leases
+    """
     statement = select(Lease
             ).where(
                 Lease.property_id == property_id,
@@ -240,6 +249,11 @@ services for running tasks
 async def base_manage_lease_renewals_and_expired_statuses(
     session: AsyncSession, lease: Lease
 ) -> None:
+    """
+    if lease has renewal_accepted=True, new lease is being created
+    with the adjusted start and end date
+    the rest of the lease details remain the same
+    """
     lease.lease_expired = True
     if lease.renewal_accepted:
         old_start_date = lease.start_date
@@ -269,6 +283,10 @@ async def base_manage_lease_renewals_and_expired_statuses(
 async def manage_lease_renewals_and_expired_statuses(
     session: AsyncSession
 ) -> None:
+    """
+    if lease is not expired and the expiration date is bigger than the current date,
+    the lease is set as expired
+    """
     statement = select(Lease).filter(
         Lease.lease_expired == False,
         Lease.lease_expiration_date < date.today()
@@ -293,6 +311,10 @@ async def base_manage_property_statuses_for_lease_with_the_start_date_being_toda
 async def manage_property_statuses_for_lease_with_the_start_date_being_today(
     session: AsyncSession
 ) -> None:
+    """
+    check the leases with the start date being the same as the current date
+    their property status is being changed to RENTED 
+    """
     statement = select(Lease).filter(
         Lease.lease_expired == False,
         Lease.start_date == date.today()
@@ -309,6 +331,12 @@ async def manage_property_statuses_for_lease_with_the_start_date_being_today(
 async def manage_leases_with_incoming_payment_date(
     session: AsyncSession, background_tasks: BackgroundTasks
 ) -> None:
+    """
+    check the leases with the next_payment_date being the same as the current date
+    the payment object is being created for the and the tenant gets email with
+    the link to payment
+    such leases after that have their next_payment_date parameter updated
+    """
     statement = select(Lease).filter(
         Lease.lease_expired == False,
         Lease.next_payment_date == date.today()

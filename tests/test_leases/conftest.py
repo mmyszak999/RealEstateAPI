@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 
 from src.apps.leases.schemas import LeaseOutputSchema, LeaseInputSchema
 from src.apps.leases.services import create_lease, get_all_leases
+from src.apps.leases.enums import BillingPeriodEnum
 from src.core.factory.lease_factory import (
     LeaseInputSchemaFactory
 )
@@ -22,13 +23,15 @@ from tests.test_addresses.conftest import db_addresses
 from tests.test_companies.conftest import db_companies
 
 """
-one lease - property owner - db_staff_user
+one lease exists
+property owner -> db_staff_user
+tenant -> db_superuser
 """
 
 @pytest_asyncio.fixture
 async def db_leases(
     async_session: AsyncSession, db_staff_user: UserOutputSchema, db_user: UserOutputSchema,
-    db_superuser: UserOutputSchema, db_properties: PropertyOutputSchema
+    db_superuser: UserOutputSchema, db_properties: PagedResponseSchema[PropertyOutputSchema]
 ) -> PagedResponseSchema[LeaseOutputSchema]:
     available_properties = await get_all_properties(
         async_session, PageParams(), get_available=True, output_schema=PropertyOutputSchema
@@ -41,7 +44,8 @@ async def db_leases(
     lease_input = LeaseInputSchemaFactory().generate(
         property_id=staff_property[0].id,
         owner_id=owner.id,
-        tenant_id=tenant.id
+        tenant_id=tenant.id,
+        billing_period=BillingPeriodEnum.MONTHLY
         )
     await create_lease(async_session, lease_input)
         

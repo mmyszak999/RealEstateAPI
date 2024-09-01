@@ -19,6 +19,11 @@ from tests.test_users.conftest import db_user, db_staff_user
 DB_COMPANIES_SCHEMAS = [CompanyInputSchemaFactory().generate() for _ in range(3)]
 
 
+
+"""
+staff user is added to one of the companies
+"""
+
 @pytest_asyncio.fixture
 async def db_companies(
     async_session: AsyncSession,db_staff_user: UserOutputSchema

@@ -35,7 +35,9 @@ from src.dependencies.user import authenticate_user
 
 user_router = APIRouter(prefix="/users", tags=["users"])
 
-
+"""
+use endpoint if you want to create a user and use the account immediately
+"""
 @user_router.post(
     "/create", response_model=UserInfoOutputSchema, status_code=status.HTTP_201_CREATED
 )
@@ -46,13 +48,15 @@ async def create_user(
 ) -> UserInfoOutputSchema:
     return await create_single_user(session, user_input, background_tasks)
 
-
+"""
+use endpoint if you want to create a user and go through the activation process
+"""
 @user_router.post(
     "/create-with-email-activation",
     response_model=UserInfoOutputSchema,
     status_code=status.HTTP_201_CREATED
 )
-async def create_user(
+async def create_user_with_activation(
     user_input: UserRegisterSchema,
     background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_db)
