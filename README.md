@@ -33,9 +33,12 @@ https://chocolatey.org/
 `$ make build`
 5. In order to run project type: 
 `$ make up`
-6. To run migrations type:
+6. To cancel previous migrations type:
+`$ make stamp-migrations`
+7. Delete all files from alembic/versions
+8. To run migrations type:
 `$ make migrations`
-7. To create the superuser account type:
+9. To create the superuser account type:
 `$ make superuser`
 
 After that you can use the project.
