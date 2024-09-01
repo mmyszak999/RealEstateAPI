@@ -22,7 +22,7 @@ def default_next_payment_date(context):
     billing_period = context.get_current_parameters()["billing_period"]
     end_date = context.get_current_parameters().get("end_date", None)
 
-    mext_payment = get_billing_period_time_span_between_payments(
+    next_payment = get_billing_period_time_span_between_payments(
         start_date, billing_period
         )
 

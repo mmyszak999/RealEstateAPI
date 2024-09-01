@@ -31,10 +31,10 @@ class Payment(Base):
         ForeignKey("lease.id", ondelete="SET NULL", onupdate="cascade"),
         nullable=True,
     )
-    lease = relationship("Lease", back_populates="payments")
+    lease = relationship("Lease", back_populates="payments", lazy='joined')
     tenant_id = Column(
         String(length=50),
         ForeignKey("user.id", ondelete="SET NULL", onupdate="cascade"),
         nullable=True
     )
-    tenant = relationship("User", back_populates="payments")
+    tenant = relationship("User", back_populates="payments", lazy='joined')

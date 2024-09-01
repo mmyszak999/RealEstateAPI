@@ -35,6 +35,6 @@ scheduler = AsyncIOScheduler()
     
 scheduler.add_job(_manage_lease_renewals_and_expired_statuses, "interval", minutes=60*24)
 scheduler.add_job(_manage_property_statuses_for_lease_with_the_start_date_being_today, "interval", minutes=60*24)
-#scheduler.add_job(_manage_leases_with_incoming_payment_date, "interval", minutes=60*24)
+scheduler.add_job(_manage_leases_with_incoming_payment_date, "interval", seconds=60)
 scheduler.start()
 

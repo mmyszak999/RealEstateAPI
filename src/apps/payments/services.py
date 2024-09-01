@@ -3,7 +3,7 @@ from typing import Any, Union
 
 import stripe
 from fastapi import BackgroundTasks, Request
-from pydantic import BaseSettings
+from pydantic import BaseSettings, BaseModel
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,11 +13,14 @@ from src.apps.payments.schemas import (
     StripePublishableKeySchema,
     StripeSessionSchema,
     PaymentBaseOutputSchema,
-    PaymentInputSchema,
     PaymentAwaitSchema,
     PaymentConfirmationSchema
 )
-from src.apps.emails.services import send_awaiting_for_payment_mail, send_payment_confirmation_mail
+from src.apps.emails.services import (
+    send_awaiting_for_payment_mail,
+    send_payment_confirmation_mail,
+    send_activation_email
+)
 from src.apps.users.models import User
 from src.apps.leases.models import Lease
 from src.core.exceptions import (
@@ -57,19 +60,20 @@ async def create_payment(
     session.add(lease)
     
     await session.commit()
-    
-    email_schema = PaymentAwaitSchema(
+    body_schema = PaymentAwaitSchema(
         lease_id=lease.id,
         payment_id=new_payment.id,
         tenant_id=lease.tenant_id,
-        rent_amount=lease.renewal_accepted,
-        created_at=new_payment.created_at
+        rent_amount=lease.rent_amount,
+        created_at=new_payment.created_at,
+        payment_checkout_url=new_payment.payment_checkout_url
     )
-    await send_activation_email(lease.tenant.email, session, background_tasks)
+    
+    await send_awaiting_for_payment_mail(lease.tenant.email, session, background_tasks, body_schema)
 
-
+    
 async def get_single_payment(
-    session: AsyncSession, payment_id: str, as_staff: bool = False
+    session: AsyncSession, payment_id: str, as_staff: bool = False, output_schema: BaseModel=PaymentOutputSchema
 ) -> Union[
         PaymentOutputSchema,
         PaymentBaseOutputSchema
@@ -77,7 +81,7 @@ async def get_single_payment(
     if not (payment_object := await if_exists(Payment, "id", payment_id, session)):
         raise DoesNotExist(Payment.__name__, "id", payment_id)
 
-        return PaymentOutputSchema.from_orm(payment_object)
+    return output_schema.from_orm(payment_object)
 
 
 async def get_all_payments(
@@ -106,7 +110,7 @@ async def get_all_payments(
     if query_params:
         query = filter_and_sort_instances(query_params, query, Payment)
 
-    return paginate(
+    return await paginate(
         query=query,
         response_schema=output_schema,
         table=Payment,
@@ -139,7 +143,7 @@ async def create_checkout_session(
             mode="payment",
             line_items=[payment_data],
             metadata={
-                "tenant_id": payment.tenant_id, "lease_id": payment.lease_id
+                "tenant_id": payment.tenant_id, "lease_id": payment.lease_id, "payment_id": payment.id
             }
         )
     return checkout_session
@@ -152,10 +156,10 @@ async def get_stripe_session_data(session: AsyncSession, payment_id: str) -> Str
     if payment_object.payment_accepted or (not payment_object.waiting_for_payment):
         raise PaymentAlreadyAccepted
 
-    payment_data = {
-            "payment_data": {
+    price_data = {
+            "price_data": {
                 "currency": "usd",
-                "lease_payment_date": {
+                "product_data": {
                     "name": f"Lease payment #{payment_object.id}",
                 },
                 "unit_amount": int(payment_object.lease.rent_amount * 100),
@@ -164,7 +168,7 @@ async def get_stripe_session_data(session: AsyncSession, payment_id: str) -> Str
         }
 
     stripe_checkout_session = await create_checkout_session(
-        payment_data, payment_object.id
+        price_data, payment_object
     )
     
     return StripeSessionSchema(
@@ -198,12 +202,9 @@ async def handle_stripe_webhook_event(
 async def fulfill_payment(
     session: AsyncSession, stripe_session, payment_intent, background_tasks: BackgroundTasks
 ) -> None:
-    if not payment_id:
-        payment_id = stripe_session["metadata"]["payment_id"]
-        
-    if not amount:
-        amount = payment_intent["amount"] / 100
-        
+    print(stripe_session, "gang", payment_intent)
+    payment_id = stripe_session["metadata"]["payment_id"]
+    amount = payment_intent["amount"] / 100
     stripe_charge_id = payment_intent["latest_charge"]
     
     if not (payment_object := await if_exists(Payment, "id", payment_id, session)):
@@ -218,16 +219,19 @@ async def fulfill_payment(
     payment_object.payment_accepted = True
     payment_object.payment_date = datetime.date.today()
     session.add(payment_object)
+    await session.commit()
     
-    email_schema = PaymentConfirmationSchema(
-        lease_id=payment_object.lease.id,
+    body_schema = PaymentConfirmationSchema(
+        lease_id=payment_object.lease_id,
         payment_id=payment_object.id,
-        tenant_id=payment_object.tenant.id,
-        rent_amount=payment_object.lease.renewal_accepted,
-        created_at=payment_object.created_at
+        tenant_id=payment_object.tenant_id,
+        rent_amount=payment_object.lease.rent_amount,
+        created_at=payment_object.created_at,
+        payment_checkout_url=payment_object.payment_checkout_url
     )
+    print("gg", body_schema)
     await send_payment_confirmation_mail(
-        payment_object.tenant.email, session, background_tasks, email_schema
+        payment_object.tenant.email, session, background_tasks, body_schema
     )
     
     

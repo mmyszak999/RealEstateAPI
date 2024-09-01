@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from fastapi_utils.tasks import repeat_every 
 
 from src.apps.leases.models import Lease
+from src.apps.payments.models import Payment
 from src.apps.leases.schemas import (
     LeaseInputSchema,
     LeaseOutputSchema,
@@ -312,11 +313,11 @@ async def manage_leases_with_incoming_payment_date(
         Lease.lease_expired == False,
         Lease.next_payment_date == date.today()
     )
-    leases_with_imcoming_payments = await session.scalars(statement)
-    leases_with_imcoming_payments = leases_with_the_first_day.unique().all()
+    leases_with_incoming_payments = await session.scalars(statement)
+    leases_with_incoming_payments = leases_with_incoming_payments.unique().all()
     [
         await create_payment(session, lease, background_tasks)
-        for lease in leases_with_imcoming_payments
+        for lease in leases_with_incoming_payments
     ]
     await session.commit()
 

@@ -38,4 +38,4 @@ class User(Base):
     company = relationship("Company", back_populates="users", lazy="joined")
     owner_leases = relationship("Lease", back_populates="owner", lazy="joined", foreign_keys="Lease.owner_id")
     tenant_leases = relationship("Lease", back_populates="tenant", lazy="joined", foreign_keys="Lease.tenant_id")
-    payments = relationship("Payment", back_populates="tenant")
+    payments = relationship("Payment", back_populates="tenant", lazy='joined')
