@@ -57,4 +57,5 @@ class Lease(Base):
         ForeignKey("property.id", ondelete="SET NULL", onupdate="cascade"),
         nullable=True,
     )
+    payments = relationship("Payment", back_populates="lease", lazy='joined')
     

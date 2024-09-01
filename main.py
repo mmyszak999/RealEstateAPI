@@ -10,6 +10,8 @@ from src.apps.properties.routers import property_router
 from src.apps.companies.routers import company_router
 from src.apps.addresses.routers import address_router
 from src.apps.leases.routers import lease_router
+from src.apps.payments.routers import stripe_router, payment_router
+
 from src.core.exceptions import (
     AccountAlreadyActivatedException,
     AccountAlreadyDeactivatedException,
@@ -39,7 +41,8 @@ from src.core.exceptions import (
     TenantAlreadyAcceptedRenewalException,
     TenantAlreadyDiscardedRenewalException,
     PropertyWithoutOwnerException,
-    UserCannotRentTheirPropertyForThemselvesException
+    UserCannotRentTheirPropertyForThemselvesException,
+    PaymentAlreadyAccepted
 )
 from src.core.tasks import scheduler
 
@@ -57,6 +60,8 @@ root_router.include_router(property_router)
 root_router.include_router(company_router)
 root_router.include_router(address_router)
 root_router.include_router(lease_router)
+root_router.include_router(payment_router)
+root_router.include_router(stripe_router)
 
 app.include_router(root_router)
 
@@ -314,3 +319,10 @@ async def user_cannot_rent_their_property_for_themselves_exception(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
     )
 
+@app.exception_handler(PaymentAlreadyAccepted)
+def handle_payment_already_accepted_exception(
+    request: Request, exception: PaymentAlreadyAccepted
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exception)}
+    )

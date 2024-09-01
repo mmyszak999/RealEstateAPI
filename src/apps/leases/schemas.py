@@ -71,6 +71,7 @@ class LeaseOutputSchema(LeaseBasicOutputSchema):
     renewal_accepted: bool
     lease_expired: bool
     lease_expiration_date: datetime.date
+    next_payment_date: datetime.date
     owner_id: Optional[str]
     owner: Optional[UserInfoOutputSchema]
     tenant_id: Optional[str]

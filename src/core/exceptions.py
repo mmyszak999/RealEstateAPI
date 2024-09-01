@@ -182,3 +182,10 @@ class UserCannotRentTheirPropertyForThemselvesException(ServiceException):
         super().__init__(
             "Property owner cannot rent the property for themselves ! "
         )
+
+
+class PaymentAlreadyAccepted(ServiceException):
+    def __init__(self) -> None:
+        super().__init__(
+            "Payment for your rent is already accepted!"
+        )

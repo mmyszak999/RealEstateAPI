@@ -4,13 +4,18 @@
 </head>
 <body>
     <div style=" display: flex; align-items: center; justify-content: center; flex-direction: column;">
-        <h3> Payment Confirmation - order #{{order_id}} </h3>
+        <h3> Payment Confirmation - payment {{payment_id}} </h3>
         <br>
-        <p>Thank you for purchasing in our store.</p>
         <br>
+        <p>Payment data:</p>
+        <p>Lease id {{lease_id}}</p>
+        <p>Tenant id {{tenant_id}}</p>
+        <p>Rent amount  {{rent_amount}}</p>
+        <p>Payment request created at {{created_at}}</p>
+
             <p>We have just received your payment.</p>
             <br>
-            <p>Your products will be delivered as soon as possible</p>
+            <p>Thank you for the rent payment! </p>
             <br>
 
     </div>

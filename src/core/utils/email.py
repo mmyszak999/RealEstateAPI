@@ -37,8 +37,9 @@ async def send_email(
         template_body=body_schema.dict(),
         subtype="html",
     )
-
+    print(email_message.body, email_message.recipients, email_message.subject, email_message.template_body, email_message.reply_to, "xd")
     fast_mail = FastMail(settings)
     background_tasks.add_task(
         fast_mail.send_message, email_message, template_name=schema.template_name
     )
+    await background_tasks()
