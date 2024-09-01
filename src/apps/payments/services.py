@@ -39,7 +39,7 @@ async def create_payment(
     session: AsyncSession, lease: Lease, background_tasks: BackgroundTasks
 ) -> PaymentOutputSchema:
     new_payment = Payment(
-        created_at=lease.next_payment_date,
+        created_at=datetime.date.today(),
         lease_id=lease.id,
         tenant_id=lease.tenant_id,
     )
@@ -52,12 +52,10 @@ async def create_payment(
     new_payment.payment_checkout_url = stripe_session.url
     session.add(new_payment)
     
-    next_payment_date = get_billing_period_time_span_between_payments(
+    next_payment_date, _ = get_billing_period_time_span_between_payments(
         lease.next_payment_date, lease.billing_period
     )
-    next_payment_date, time_span = min(next_payment_date, lease.lease_expiration_date)
-    if (next_payment_date - lease.lease_expiration_date) < datetime.timedelta(days=time_span):
-        next_payment_date = None
+    next_payment_date = min(next_payment_date, lease.lease_expiration_date)
     lease.next_payment_date = next_payment_date
     session.add(lease)
     

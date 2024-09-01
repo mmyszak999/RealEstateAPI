@@ -28,7 +28,7 @@ one lease - property owner - db_staff_user
 @pytest_asyncio.fixture
 async def db_leases(
     async_session: AsyncSession, db_staff_user: UserOutputSchema, db_user: UserOutputSchema,
-    db_superuser: UserOutputSchema, db_properties: PropertyOutputSchema
+    db_superuser: UserOutputSchema, db_properties: PagedResponseSchema[PropertyOutputSchema]
 ) -> PagedResponseSchema[LeaseOutputSchema]:
     available_properties = await get_all_properties(
         async_session, PageParams(), get_available=True, output_schema=PropertyOutputSchema

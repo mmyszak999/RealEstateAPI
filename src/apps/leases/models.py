@@ -37,7 +37,7 @@ class Lease(Base):
         nullable=False,
         default=BillingPeriodEnum.MONTHLY
     )
-    next_payment_date = Column(Date, nullable=False, default=default_next_payment_date)
+    next_payment_date = Column(Date, nullable=True, default=default_next_payment_date)
     payment_bank_account = Column(String(length=75), nullable=False)
     tenant_id = Column(
         String(length=50),

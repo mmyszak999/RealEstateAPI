@@ -29,7 +29,7 @@ DB_PROPERTIES_SCHEMAS.append(
 
 """
 one property will be unavailable
-and 2 of them will have the ownership
+and 2 of them will have the ownership (staff user and superuser)
 """
 
 
