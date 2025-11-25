@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import Optional
 
@@ -29,14 +29,24 @@ class LeaseInputSchemaFactory(SchemaFactory):
         tenant_id: str = None,
         property_id: str = None,
     ):
+        today = date.today()
+
+        start_date_range_start = today - timedelta(days=3)
+        start_date_range_end = today + timedelta(days=4)
+
+        end_date_range_start = today + timedelta(days=14)
+        end_date_range_end = today + timedelta(days=30)
+
         return self.schema_class(
             start_date=start_date
             or generate_random_date(
-                start_date=date(2025, 1, 1), end_date=date(2025, 7, 1)
+                start_date=start_date_range_start,
+                end_date=start_date_range_end,
             ),
             end_date=end_date
             or generate_random_date(
-                start_date=date(2026, 1, 1), end_date=date(2026, 7, 1)
+                start_date=end_date_range_start,
+                end_date=end_date_range_end,
             ),
             rent_amount=rent_amount or set_random_rent_amount(),
             initial_deposit_amount=initial_deposit_amount

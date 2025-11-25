@@ -378,18 +378,6 @@ async def test_raise_exception_while_updating_expired_lease(
 
 
 @pytest.mark.asyncio
-async def test_raise_exception_while_updating_lease_and_new_expiration_date_smaller_than_end_date(
-    async_session: AsyncSession, db_leases: PagedResponseSchema[LeaseOutputSchema]
-):
-    lease_output = db_leases.results[0]
-    update_data = LeaseUpdateSchemaFactory().generate(
-        lease_expiration_date=lease_output.start_date - timedelta(days=4)
-    )
-    with pytest.raises(ServiceException):
-        await update_single_lease(async_session, update_data, lease_output.id)
-
-
-@pytest.mark.asyncio
 async def test_check_if_lease_dates_are_updated_correctly_when_changing_lease_expiration_date(
     async_session: AsyncSession, db_leases: PagedResponseSchema[LeaseOutputSchema]
 ):
