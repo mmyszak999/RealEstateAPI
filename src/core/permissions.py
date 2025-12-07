@@ -1,46 +1,27 @@
-from typing import Any
+from fastapi import Depends, HTTPException, status
 
 from src.apps.users.models import User
-from src.core.exceptions import AuthorizationException
+from src.dependencies.user import authenticate_user
 
 
-async def check_if_superuser(request_user: User) -> bool:
-    if not request_user.is_superuser:
-        raise AuthorizationException(
-            "You don't have superuser permissions to perform this action!"
+def role_required(*allowed_roles: str, allow_owner: bool = False, owner_field: str = None):
+    async def wrapper(
+        user: User = Depends(authenticate_user),
+        **kwargs
+    ) -> User:
+        user_role = user.role.name if user.role else None
+
+        if user_role in allowed_roles:
+            return user
+
+        if allow_owner and owner_field and owner_field in kwargs:
+            target_value = kwargs[owner_field]
+            if getattr(user, owner_field) == target_value:
+                return user
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions",
         )
-    return True
 
-
-async def check_if_staff(request_user: User) -> bool:
-    if not request_user.is_staff:
-        raise AuthorizationException(
-            "You don't have staff permissions to perform this action!"
-        )
-    return True
-
-
-async def check_if_staff_or_has_permission(request_user: User, attribute: str) -> bool:
-    if not (request_user.is_staff or getattr(request_user, attribute) == True):
-        raise AuthorizationException(
-            "You don't have staff permissions to perform this action!"
-        )
-    return True
-
-
-async def check_if_staff_or_owner(
-    request_user: User, attribute: str, value: Any
-) -> bool:
-    if not (request_user.is_staff or getattr(request_user, attribute) == value):
-        raise AuthorizationException(
-            "You don't have permissions to access the resource"
-        )
-    return True
-
-
-async def check_if_owner(request_user: User, attribute: str, value: Any) -> bool:
-    if not (getattr(request_user, attribute) == value):
-        raise AuthorizationException(
-            "You don't have permissions to access the resource"
-        )
-    return True
+    return wrapper

@@ -25,8 +25,6 @@ class User(Base):
     password = Column(String(length=60), nullable=True)
     birth_date = Column(Date, nullable=False)
     is_active = Column(Boolean, nullable=False, default=False)
-    is_superuser = Column(Boolean, nullable=False, default=False)
-    is_staff = Column(Boolean, nullable=False, default=False)
     phone_number = Column(String(length=50), nullable=False)
     created_at = Column(DateTime, default=dt.datetime.now, nullable=True)
     properties = relationship("Property", back_populates="owner", lazy="joined")
@@ -43,3 +41,26 @@ class User(Base):
         "Lease", back_populates="tenant", lazy="joined", foreign_keys="Lease.tenant_id"
     )
     payments = relationship("Payment", back_populates="tenant", lazy="joined")
+    """role_name = Column(
+        String(length=50),
+        ForeignKey("role.name", ondelete="RESTRICT", onupdate="cascade"),
+        nullable=False,
+        #default="user",
+        #server_default="user"
+    )
+    role = relationship("Role", back_populates="users", lazy="joined")"""
+
+
+class Role(Base):
+    __tablename__ = "role"
+
+    id = Column(
+        String(50),
+        primary_key=True,
+        unique=True,
+        nullable=False,
+        index=True,
+        default=generate_uuid
+    )
+    name = Column(String(50), unique=True, nullable=False)
+    description = Column(String(255), nullable=True)

@@ -4,6 +4,23 @@ from typing import Any, Optional
 from pydantic import BaseModel, EmailStr, Field, validator
 
 
+class RoleBaseSchema(BaseModel):
+    name: str = Field(max_length=50)
+    description: str = Field(max_length=255)
+
+
+class RoleInputSchema(RoleBaseSchema):
+    pass
+
+
+class RoleUpdateSchema(RoleBaseSchema):
+    pass
+
+
+class RoleOutputSchema(RoleInputSchema):
+    id: str
+
+
 class UserLoginInputSchema(BaseModel):
     email: EmailStr = Field()
     password: str = Field()
@@ -97,6 +114,7 @@ class UserOutputSchema(UserInputSchema):
     is_staff: bool
     created_at: Optional[datetime.datetime]
     company: Optional[UserCompanyOutputSchema]
+    role: Optional[RoleOutputSchema]
 
     class Config:
         orm_mode = True

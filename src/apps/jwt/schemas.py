@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 class AccessTokenOutputSchema(BaseModel):
     access_token: str
-    is_staff: str
+    user_role: str
 
 
 class ConfirmationTokenSchema(BaseModel):
