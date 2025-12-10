@@ -6,19 +6,19 @@ from pydantic import BaseModel, EmailStr, Field, validator
 
 class RoleBaseSchema(BaseModel):
     name: str = Field(max_length=50)
-    description: str = Field(max_length=255)
 
 
 class RoleInputSchema(RoleBaseSchema):
-    pass
+    description: Optional[str] = Field(max_length=255)
 
 
 class RoleUpdateSchema(RoleBaseSchema):
-    pass
+    description: Optional[str] = Field(max_length=255)
 
 
 class RoleOutputSchema(RoleInputSchema):
     id: str
+    description: Optional[str] = Field(max_length=255)
 
 
 class UserLoginInputSchema(BaseModel):
@@ -93,6 +93,7 @@ class UserInfoOutputSchema(UserBaseSchema):
     email: EmailStr
     birth_date: datetime.date
     is_active: bool
+    role: Optional[RoleBaseSchema]
 
     class Config:
         orm_mode = True

@@ -34,7 +34,7 @@ db-root-shell:
 	docker-compose exec db mysql -u $(db-root) -p
 
 superuser:
-	docker-compose exec web bash -c "bash ./app_scripts/create_superuser.sh main_db"
+	docker-compose exec web bash -c "bash ./app_scripts/create_superuser_and_admin_role.sh main_db"
 
 isort:
 		isort tests

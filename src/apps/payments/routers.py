@@ -1,7 +1,7 @@
 from typing import Union
 
 import stripe
-from fastapi import BackgroundTasks, Depends, Request, Response, status
+from fastapi import BackgroundTasks, Depends, Request, status
 from fastapi.routing import APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,16 +21,20 @@ from src.apps.users.models import User
 from src.core.exceptions import AuthorizationException
 from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
-from src.core.permissions import check_if_staff, check_if_staff_or_owner
+from src.core.permissions import role_required
 from src.dependencies.get_db import get_db
 from src.dependencies.user import authenticate_user
 from src.settings.stripe import settings
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
+
 stripe_router = APIRouter(prefix="/stripe", tags=["stripe"])
 payment_router = APIRouter(prefix="/payments", tags=["payment"])
 
 
+# ─────────────────────────────────────────────
+# STRIPE WEBHOOK — NO AUTH (Stripe backend)
+# ─────────────────────────────────────────────
 @stripe_router.post(
     "/webhook/",
     status_code=status.HTTP_200_OK,
@@ -43,6 +47,9 @@ async def handle_webhook_event(
     return await handle_stripe_webhook_event(session, request, background_tasks)
 
 
+# ─────────────────────────────────────────────
+# GET ALL PAYMENTS (STAFF/ADMIN ONLY)
+# ─────────────────────────────────────────────
 @payment_router.get(
     "/all",
     response_model=Union[
@@ -51,21 +58,23 @@ async def handle_webhook_event(
     ],
     status_code=status.HTTP_200_OK,
 )
+@role_required("admin", "staff")
 async def get_payments(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
-    request_user: User = Depends(authenticate_user),
 ) -> Union[
     PagedResponseSchema[PaymentBaseOutputSchema],
     PagedResponseSchema[PaymentOutputSchema],
 ]:
-    await check_if_staff(request_user)
     return await get_all_payments(
         session, page_params, request.query_params.multi_items()
     )
 
 
+# ─────────────────────────────────────────────
+# GET ACCEPTED PAYMENTS (STAFF/ADMIN ONLY)
+# ─────────────────────────────────────────────
 @payment_router.get(
     "/accepted",
     response_model=Union[
@@ -74,21 +83,26 @@ async def get_payments(
     ],
     status_code=status.HTTP_200_OK,
 )
+@role_required("admin", "staff")
 async def get_accepted_payments(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
-    request_user: User = Depends(authenticate_user),
 ) -> Union[
     PagedResponseSchema[PaymentBaseOutputSchema],
     PagedResponseSchema[PaymentOutputSchema],
 ]:
-    await check_if_staff(request_user)
     return await get_all_payments(
-        session, page_params, request.query_params.multi_items(), get_accepted=True
+        session,
+        page_params,
+        request.query_params.multi_items(),
+        get_accepted=True,
     )
 
 
+# ─────────────────────────────────────────────
+# GET WAITING PAYMENTS (STAFF/ADMIN ONLY)
+# ─────────────────────────────────────────────
 @payment_router.get(
     "/waiting",
     response_model=Union[
@@ -97,21 +111,26 @@ async def get_accepted_payments(
     ],
     status_code=status.HTTP_200_OK,
 )
+@role_required("admin", "staff")
 async def get_waiting_payments(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
-    request_user: User = Depends(authenticate_user),
 ) -> Union[
     PagedResponseSchema[PaymentBaseOutputSchema],
     PagedResponseSchema[PaymentOutputSchema],
 ]:
-    await check_if_staff(request_user)
     return await get_all_payments(
-        session, page_params, request.query_params.multi_items(), get_waiting=True
+        session,
+        page_params,
+        request.query_params.multi_items(),
+        get_waiting=True,
     )
 
 
+# ─────────────────────────────────────────────
+# GET USER'S OWN PAYMENTS (USER, STAFF, ADMIN)
+# ─────────────────────────────────────────────
 @payment_router.get(
     "/my-payments",
     response_model=Union[
@@ -120,6 +139,7 @@ async def get_waiting_payments(
     ],
     status_code=status.HTTP_200_OK,
 )
+@role_required("admin", "staff", "user")
 async def get_user_payments(
     request: Request,
     session: AsyncSession = Depends(get_db),
@@ -137,17 +157,28 @@ async def get_user_payments(
     )
 
 
+# ─────────────────────────────────────────────
+# GET SINGLE PAYMENT (STAFF/ADMIN OR OWNER)
+# ─────────────────────────────────────────────
 @payment_router.get(
     "/{payment_id}",
     response_model=Union[PaymentOutputSchema, PaymentBaseOutputSchema],
     status_code=status.HTTP_200_OK,
 )
+@role_required("admin", "staff", "user")
 async def get_payment(
     payment_id: str,
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
 ) -> Union[PaymentOutputSchema, PaymentBaseOutputSchema]:
     payment = await get_single_payment(session, payment_id)
-    if await check_if_staff_or_owner(request_user, "id", payment.tenant.id):
+
+    # STAFF/ADMIN: always allowed
+    if request_user.role and request_user.role.name in ("admin", "staff"):
         return payment
-    return AuthorizationException("You have no permissions to perform this action! ")
+
+    # TENANT: allowed to see his own payment
+    if payment.tenant_id == request_user.id:
+        return payment
+
+    raise AuthorizationException("You do not have permission to access this payment.")

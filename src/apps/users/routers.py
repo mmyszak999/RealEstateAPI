@@ -15,6 +15,7 @@ from src.apps.users.schemas import (
     UserOutputSchema,
     UserRegisterSchema,
     UserUpdateSchema,
+    RoleBaseSchema
 )
 from src.apps.users.services.activation_services import (
     activate_single_user,
@@ -26,6 +27,7 @@ from src.apps.users.services.user_services import (
     get_all_users,
     get_single_user,
     update_single_user,
+    set_user_role
 )
 from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
@@ -171,3 +173,12 @@ async def activate_user(
         status_code=status.HTTP_200_OK,
         content={"message": "The account has been activated!"},
     )
+
+@user_router.patch("/{user_id}/role_add")
+@role_required("admin", "staff")
+async def update_user_role(
+    user_id: str,
+    role_schema: RoleBaseSchema,
+    session: AsyncSession = Depends(get_db),
+):
+    return await set_user_role(session, user_id, role_schema.role)

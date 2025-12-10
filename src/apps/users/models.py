@@ -1,16 +1,16 @@
 import datetime as dt
 
-from sqlalchemy import Boolean, Column, Date, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, Date, ForeignKey, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import DateTime
 
-from src.apps.leases.models import Lease
 from src.core.utils.utils import generate_uuid
 from src.database.db_connection import Base
 
 
 class User(Base):
     __tablename__ = "user"
+
     id = Column(
         String(length=50),
         primary_key=True,
@@ -27,6 +27,8 @@ class User(Base):
     is_active = Column(Boolean, nullable=False, default=False)
     phone_number = Column(String(length=50), nullable=False)
     created_at = Column(DateTime, default=dt.datetime.now, nullable=True)
+
+    # Relationships
     properties = relationship("Property", back_populates="owner", lazy="joined")
     company_id = Column(
         String(length=50),
@@ -34,6 +36,7 @@ class User(Base):
         nullable=True,
     )
     company = relationship("Company", back_populates="users", lazy="joined")
+
     owner_leases = relationship(
         "Lease", back_populates="owner", lazy="joined", foreign_keys="Lease.owner_id"
     )
@@ -41,14 +44,14 @@ class User(Base):
         "Lease", back_populates="tenant", lazy="joined", foreign_keys="Lease.tenant_id"
     )
     payments = relationship("Payment", back_populates="tenant", lazy="joined")
-    """role_name = Column(
+
+    role_id = Column(
         String(length=50),
-        ForeignKey("role.name", ondelete="RESTRICT", onupdate="cascade"),
-        nullable=False,
-        #default="user",
-        #server_default="user"
+        ForeignKey("role.id", ondelete="SET NULL", onupdate="cascade"),
+        nullable=True,
     )
-    role = relationship("Role", back_populates="users", lazy="joined")"""
+
+    role = relationship("Role", back_populates="users", lazy="joined")
 
 
 class Role(Base):
@@ -60,7 +63,9 @@ class Role(Base):
         unique=True,
         nullable=False,
         index=True,
-        default=generate_uuid
+        default=generate_uuid,
     )
     name = Column(String(50), unique=True, nullable=False)
     description = Column(String(255), nullable=True)
+
+    users = relationship("User", back_populates="role", lazy="joined")

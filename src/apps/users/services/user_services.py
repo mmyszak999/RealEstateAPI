@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.apps.emails.services import send_activation_email
 from src.apps.jwt.schemas import AccessTokenOutputSchema
-from src.apps.users.models import User
+from src.apps.users.models import User, Role
 from src.apps.users.schemas import (
     UserInfoOutputSchema,
     UserInputSchema,
@@ -93,7 +93,7 @@ async def get_access_token_schema(
     user = await authenticate(user_login_schema, session=session)
     email = user.email
     access_token = auth_jwt.create_access_token(subject=email, algorithm="HS256")
-    return AccessTokenOutputSchema(access_token=access_token, user_role=user.role_name)
+    return AccessTokenOutputSchema(access_token=access_token, user_role=user.role.name)
 
 
 async def get_single_user(
@@ -148,6 +148,30 @@ async def update_single_user(
         session, user_id=user_id, output_schema=UserInfoOutputSchema
     )
 
+async def set_user_role(
+    session: AsyncSession,
+    user_id: str,
+    role_name: str
+) -> UserInfoOutputSchema:
+    user = await session.scalar(
+        select(User).filter(User.id == user_id).limit(1)
+    )
+    if not user:
+        raise DoesNotExist(User.__name__, "id", user_id)
+
+    role = await session.scalar(
+        select(Role).filter(Role.name == role_name).limit(1)
+    )
+    if not role:
+        raise ServiceException(f"Role '{role_name}' does not exist")
+
+    user.role_id = role.id
+
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+
+    return UserInfoOutputSchema.from_orm(user)
 
 """async def delete_single_user(session: AsyncSession, user_id: str):
     if not (user_object := (await if_exists(User, "id", user_id, session))):

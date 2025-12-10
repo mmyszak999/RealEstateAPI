@@ -1,6 +1,6 @@
 from typing import Union
 
-from fastapi import Depends, Request, Response, status
+from fastapi import Depends, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,39 +22,43 @@ from src.apps.properties.services import (
 from src.apps.users.models import User
 from src.core.pagination.models import PageParams
 from src.core.pagination.schemas import PagedResponseSchema
-from src.core.permissions import check_if_staff, check_if_staff_or_owner
 from src.dependencies.get_db import get_db
 from src.dependencies.user import authenticate_user
+from src.core.permissions import role_required  # <-- kluczowe
 
 property_router = APIRouter(prefix="/properties", tags=["property"])
 
 
+# ---------------------------------------------------------
+# CREATE
+# ---------------------------------------------------------
 @property_router.post(
     "/",
     response_model=PropertyBasicOutputSchema,
     status_code=status.HTTP_201_CREATED,
 )
+@role_required("admin", "staff")
 async def post_property(
     property: PropertyInputSchema,
     session: AsyncSession = Depends(get_db),
-    request_user: User = Depends(authenticate_user),
 ) -> PropertyBasicOutputSchema:
-    await check_if_staff(request_user)
     return await create_property(session, property)
 
 
+# ---------------------------------------------------------
+# GET ALL (STAFF ONLY)
+# ---------------------------------------------------------
 @property_router.get(
     "/all",
     response_model=PagedResponseSchema[PropertyBasicOutputSchema],
     status_code=status.HTTP_200_OK,
 )
+@role_required("admin", "staff")
 async def get_every_property(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
-    request_user: User = Depends(authenticate_user),
 ) -> PagedResponseSchema[PropertyBasicOutputSchema]:
-    await check_if_staff(request_user)
     return await get_all_properties(
         session,
         page_params,
@@ -62,6 +66,9 @@ async def get_every_property(
     )
 
 
+# ---------------------------------------------------------
+# GET AVAILABLE (PUBLIC)
+# ---------------------------------------------------------
 @property_router.get(
     "/",
     response_model=PagedResponseSchema[PropertyBasicOutputSchema],
@@ -71,7 +78,6 @@ async def get_available_properties(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
-    request_user: User = Depends(authenticate_user),
 ) -> PagedResponseSchema[PropertyBasicOutputSchema]:
     return await get_all_properties(
         session,
@@ -81,18 +87,20 @@ async def get_available_properties(
     )
 
 
+# ---------------------------------------------------------
+# GET RENTED (STAFF ONLY)
+# ---------------------------------------------------------
 @property_router.get(
     "/rented",
     response_model=PagedResponseSchema[PropertyBasicOutputSchema],
     status_code=status.HTTP_200_OK,
 )
+@role_required("admin", "staff")
 async def get_rented_properties(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
-    request_user: User = Depends(authenticate_user),
 ) -> PagedResponseSchema[PropertyBasicOutputSchema]:
-    await check_if_staff(request_user)
     return await get_all_properties(
         session,
         page_params,
@@ -101,11 +109,15 @@ async def get_rented_properties(
     )
 
 
+# ---------------------------------------------------------
+# MY PROPERTIES (OWNER ONLY)
+# ---------------------------------------------------------
 @property_router.get(
     "/my-properties",
     response_model=PagedResponseSchema[PropertyBasicOutputSchema],
     status_code=status.HTTP_200_OK,
 )
+@role_required("admin", "staff", "user")  # dowolny zalogowany
 async def get_user_owner_leases(
     request: Request,
     session: AsyncSession = Depends(get_db),
@@ -120,53 +132,65 @@ async def get_user_owner_leases(
     )
 
 
+# ---------------------------------------------------------
+# GET SINGLE PROPERTY (ROLE OR OWNER)
+# ---------------------------------------------------------
 @property_router.get(
     "/{property_id}",
     response_model=Union[PropertyOutputSchema, PropertyBasicOutputSchema],
     status_code=status.HTTP_200_OK,
 )
+@role_required("admin", "staff", allow_owner=True, owner_field="property_id")
 async def get_property(
     property_id: str,
     session: AsyncSession = Depends(get_db),
     request_user: User = Depends(authenticate_user),
 ) -> Union[PropertyOutputSchema, PropertyBasicOutputSchema]:
+
     property = await get_single_property(session, property_id)
-    if request_user.is_staff or getattr(request_user, "id") == property.owner_id:
+
+    # Jeśli admin/staff albo owner — pełne dane
+    if request_user.role.name in {"admin", "staff"} or request_user.id == property.owner_id:
         return property
+
+    # W przeciwnym razie dane podstawowe
     return await get_single_property(
         session, property_id, output_schema=PropertyBasicOutputSchema
     )
 
 
+# ---------------------------------------------------------
+# UPDATE PROPERTY (ROLE OR OWNER)
+# ---------------------------------------------------------
 @property_router.patch(
     "/{property_id}",
     response_model=PropertyBasicOutputSchema,
     status_code=status.HTTP_200_OK,
 )
+@role_required("admin", "staff", allow_owner=True, owner_field="property_id")
 async def update_property(
     property_id: str,
     property_input: PropertyUpdateSchema,
     session: AsyncSession = Depends(get_db),
-    request_user: User = Depends(authenticate_user),
 ) -> PropertyOutputSchema:
-    property = await get_single_property(session, property_id)
-    await check_if_staff_or_owner(request_user, "id", property.owner_id)
     return await update_single_property(session, property_input, property_id)
 
 
+# ---------------------------------------------------------
+# CHANGE OWNER (STAFF ONLY)
+# ---------------------------------------------------------
 @property_router.patch(
     "/{property_id}/change-owner",
     status_code=status.HTTP_200_OK,
 )
+@role_required("admin", "staff")
 async def change_single_property_owner(
     property_id: str,
     property_schema: PropertyOwnerIdSchema,
     session: AsyncSession = Depends(get_db),
-    request_user: User = Depends(authenticate_user),
 ) -> PropertyOutputSchema:
-    await check_if_staff(request_user)
     await change_property_owner(session, property_schema, property_id)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"message": "The property ownership has been changed! "},
+        content={"message": "The property ownership has been changed!"},
     )
