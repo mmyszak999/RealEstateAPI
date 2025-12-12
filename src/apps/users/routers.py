@@ -69,24 +69,24 @@ async def login_user(
     "/me",
     status_code=status.HTTP_200_OK,
     response_model=UserOutputSchema,
-    dependencies=[Depends(authenticate_user)],
 )
 async def get_logged_user(
-    request_user: User = Depends(authenticate_user),
+    user: User = Depends(authenticate_user),
 ) -> UserOutputSchema:
-    return UserOutputSchema.from_orm(request_user)
+    return UserOutputSchema.from_orm(user)
 
 
 @user_router.get(
     "/",
     response_model=PagedResponseSchema[UserInfoOutputSchema],
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(role_required("admin", "staff"))],
 )
+@role_required("admin", "staff")
 async def get_users(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
+    user: User = Depends(authenticate_user)
 ) -> PagedResponseSchema[UserInfoOutputSchema]:
     return await get_all_users(
         session,
@@ -100,12 +100,13 @@ async def get_users(
     "/all",
     response_model=PagedResponseSchema[UserOutputSchema],
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(role_required("admin", "staff"))],
 )
+@role_required("admin", "staff")
 async def get_every_user(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
+    user: User = Depends(authenticate_user)
 ) -> PagedResponseSchema[UserOutputSchema]:
     return await get_all_users(
         session,
@@ -118,11 +119,12 @@ async def get_every_user(
 @user_router.get(
     "/{user_id}",
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(role_required("admin", "staff"))],
 )
+@role_required("admin", "staff")
 async def get_user(
     user_id: str,
     session: AsyncSession = Depends(get_db),
+    user: User = Depends(authenticate_user)
 ) -> UserOutputSchema:
     return await get_single_user(session, user_id)
 
@@ -131,14 +133,13 @@ async def get_user(
     "/{user_id}",
     response_model=UserInfoOutputSchema,
     status_code=status.HTTP_200_OK,
-    dependencies=[
-        Depends(role_required("admin", "staff", allow_owner=True, owner_field="id"))
-    ],
 )
+@role_required("admin", "staff", allow_owner=True, owner_field="user_id")
 async def update_user(
     user_id: str,
     user_input: UserUpdateSchema,
     session: AsyncSession = Depends(get_db),
+    user: User = Depends(authenticate_user)
 ) -> UserInfoOutputSchema:
     return await update_single_user(session, user_input, user_id)
 
@@ -146,11 +147,12 @@ async def update_user(
 @user_router.patch(
     "/{user_id}/deactivate",
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(role_required("admin", "staff"))],
 )
+@role_required("admin", "staff")
 async def deactivate_user(
     user_id: str,
     session: AsyncSession = Depends(get_db),
+    user: User = Depends(authenticate_user)
 ) -> JSONResponse:
     await deactivate_single_user(session, user_id, None)
     return JSONResponse(
@@ -162,11 +164,12 @@ async def deactivate_user(
 @user_router.patch(
     "/{user_id}/activate",
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(role_required("admin", "staff"))],
 )
+@role_required("admin", "staff")
 async def activate_user(
     user_id: str,
     session: AsyncSession = Depends(get_db),
+    user: User = Depends(authenticate_user)
 ) -> JSONResponse:
     await activate_single_user(session, user_id, None)
     return JSONResponse(
@@ -174,11 +177,13 @@ async def activate_user(
         content={"message": "The account has been activated!"},
     )
 
+
 @user_router.patch("/{user_id}/role_add")
 @role_required("admin", "staff")
 async def update_user_role(
     user_id: str,
     role_schema: RoleBaseSchema,
     session: AsyncSession = Depends(get_db),
+    user: User = Depends(authenticate_user)
 ):
     return await set_user_role(session, user_id, role_schema.role)

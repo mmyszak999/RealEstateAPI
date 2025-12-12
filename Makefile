@@ -36,6 +36,9 @@ db-root-shell:
 superuser:
 	docker-compose exec web bash -c "bash ./app_scripts/create_superuser_and_admin_role.sh main_db"
 
+seed:
+	docker-compose exec web bash -c "python3 -m src.core.seeds.seed"
+
 isort:
 		isort tests
 		isort src

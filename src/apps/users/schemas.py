@@ -7,6 +7,9 @@ from pydantic import BaseModel, EmailStr, Field, validator
 class RoleBaseSchema(BaseModel):
     name: str = Field(max_length=50)
 
+    class Config:
+        orm_mode = True
+
 
 class RoleInputSchema(RoleBaseSchema):
     description: Optional[str] = Field(max_length=255)
@@ -19,6 +22,9 @@ class RoleUpdateSchema(RoleBaseSchema):
 class RoleOutputSchema(RoleInputSchema):
     id: str
     description: Optional[str] = Field(max_length=255)
+
+    class Config:
+        orm_mode = True
 
 
 class UserLoginInputSchema(BaseModel):
@@ -111,8 +117,6 @@ class UserCompanyOutputSchema(BaseModel):
 class UserOutputSchema(UserInputSchema):
     id: str
     is_active: bool
-    is_superuser: bool
-    is_staff: bool
     created_at: Optional[datetime.datetime]
     company: Optional[UserCompanyOutputSchema]
     role: Optional[RoleOutputSchema]

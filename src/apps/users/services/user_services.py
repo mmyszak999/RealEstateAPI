@@ -16,6 +16,10 @@ from src.apps.users.schemas import (
     UserOutputSchema,
     UserRegisterSchema,
     UserUpdateSchema,
+    RoleInputSchema,
+    RoleBaseSchema,
+    RoleOutputSchema,
+    RoleUpdateSchema
 )
 from src.core.exceptions import (
     AccountAlreadyActivatedException,
@@ -47,6 +51,9 @@ async def create_user_base(
     if email_check := await if_exists(User, "email", user_data.get("email"), session):
         raise AlreadyExists(User.__name__, "email", email_check.email)
 
+    if role_check := await if_exists(Role, "name", "user", session):
+        user_data["role_id"] = role_check.id
+    
     new_user = User(**user_data)
     return new_user
 
@@ -172,6 +179,93 @@ async def set_user_role(
     await session.refresh(user)
 
     return UserInfoOutputSchema.from_orm(user)
+
+async def create_role(
+    session: AsyncSession,
+    role_input: RoleInputSchema,
+) -> RoleOutputSchema:
+
+    role_data = role_input.dict(exclude_none=True)
+
+    # check duplicate
+    if found := await if_exists(Role, "name", role_data["name"], session):
+        raise AlreadyExists(Role.__name__, "name", found.name)
+
+    new_role = Role(**role_data)
+
+    session.add(new_role)
+    await session.commit()
+    await session.refresh(new_role)
+
+    return RoleOutputSchema.from_orm(new_role)
+
+
+async def get_single_role(
+    session: AsyncSession,
+    role_id: str,
+) -> RoleOutputSchema:
+
+    role = await session.scalar(
+        select(Role).filter(Role.id == role_id).limit(1)
+    )
+
+    if not role:
+        raise DoesNotExist(Role.__name__, "id", role_id)
+
+    return RoleOutputSchema.from_orm(role)
+
+
+async def get_all_roles(
+    session: AsyncSession,
+    page_params: PageParams,
+    query_params: list[tuple] = None,
+) -> PagedResponseSchema[RoleOutputSchema]:
+
+    query = select(Role)
+
+    if query_params:
+        query = filter_and_sort_instances(query_params, query, Role)
+
+    return await paginate(
+        query=query,
+        response_schema=RoleOutputSchema,
+        table=Role,
+        page_params=page_params,
+        session=session,
+    )
+
+
+async def update_role(
+    session: AsyncSession,
+    role_id: str,
+    role_input: RoleUpdateSchema,
+) -> RoleOutputSchema:
+
+    role = await session.scalar(
+        select(Role).filter(Role.id == role_id).limit(1)
+    )
+    if not role:
+        raise DoesNotExist(Role.__name__, "id", role_id)
+
+    update_data = role_input.dict(exclude_unset=True, exclude_none=True)
+
+    if "name" in update_data:
+        if found := await if_exists(Role, "name", update_data["name"], session):
+            # disallow renaming to existing role
+            if found.id != role_id:
+                raise AlreadyExists(Role.__name__, "name", update_data["name"])
+
+    if update_data:
+        stmt = (
+            update(Role)
+            .filter(Role.id == role_id)
+            .values(**update_data)
+        )
+        await session.execute(stmt)
+        await session.commit()
+
+    return await get_single_role(session, role_id)
+
 
 """async def delete_single_user(session: AsyncSession, user_id: str):
     if not (user_object := (await if_exists(User, "id", user_id, session))):

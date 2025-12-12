@@ -11,6 +11,7 @@ from src.apps.leases.enums import BillingPeriodEnum
 from src.core.utils.orm import default_lease_expiration_date, default_next_payment_date
 from src.core.utils.utils import generate_uuid
 from src.database.db_connection import Base
+from src.apps.payments.models import Payment
 
 
 class Lease(Base):

@@ -9,6 +9,8 @@ from sqlalchemy.sql.sqltypes import DateTime
 from src.apps.properties.enums import PropertyStatusEnum, PropertyTypeEnum
 from src.core.utils.utils import generate_uuid
 from src.database.db_connection import Base
+from src.apps.addresses.models import Address
+from src.apps.leases.models import Lease
 
 
 class Property(Base):

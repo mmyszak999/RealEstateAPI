@@ -6,6 +6,7 @@ from sqlalchemy.sql.sqltypes import DateTime
 
 from src.core.utils.utils import generate_uuid
 from src.database.db_connection import Base
+from src.apps.companies.models import Company
 
 
 class Address(Base):
