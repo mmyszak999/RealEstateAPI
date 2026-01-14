@@ -17,7 +17,7 @@ class LeaseBaseSchema(BaseModel):
     rent_amount: Decimal = Field(ge=0)
     initial_deposit_amount: Decimal = Field(ge=0)
     billing_period: BillingPeriodEnum
-    payment_bank_account: str
+
 
     @validator("start_date")
     def validate_start_date(cls, start_date: date) -> date:
@@ -50,7 +50,6 @@ class LeaseInputSchema(LeaseBaseSchema):
 
 class LeaseUpdateSchema(BaseModel):
     rent_amount: Optional[Decimal] = Field(ge=0)
-    payment_bank_account: Optional[str]
     initial_deposit_amount: Optional[Decimal] = Field(ge=0)
     lease_expiration_date: Optional[date]
 

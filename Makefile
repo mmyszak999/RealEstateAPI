@@ -40,12 +40,10 @@ seed:
 	docker-compose exec web bash -c "python3 -m src.core.seeds.seed"
 
 isort:
-		isort tests
 		isort src
 		isort main.py
 
 black:
-		black tests
 		black src
 		black main.py
 

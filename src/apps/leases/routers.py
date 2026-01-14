@@ -44,7 +44,7 @@ lease_router = APIRouter(prefix="/leases", tags=["lease"])
 async def post_lease(
     lease: LeaseInputSchema,
     session: AsyncSession = Depends(get_db),
-    request_user: User = Depends(authenticate_user),
+    user: User = Depends(authenticate_user),
 ) -> LeaseBasicOutputSchema:
     property_obj = await get_single_property(session, lease.property_id)
 
@@ -108,12 +108,12 @@ async def get_user_owner_leases(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
-    request_user: User = Depends(authenticate_user),
+    user: User = Depends(authenticate_user),
 ) -> PagedResponseSchema[LeaseBasicOutputSchema]:
     return await get_all_leases(
         session,
         page_params,
-        user_id_owner_leases=request_user.id,
+        user_id_owner_leases=user.id,
         query_params=request.query_params.multi_items(),
     )
 
@@ -131,12 +131,12 @@ async def get_user_tenant_leases(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
-    request_user: User = Depends(authenticate_user),
+    user: User = Depends(authenticate_user),
 ) -> PagedResponseSchema[LeaseBasicOutputSchema]:
     return await get_all_leases(
         session,
         page_params,
-        user_id_tenant_leases=request_user.id,
+        user_id_tenant_leases=user.id,
         query_params=request.query_params.multi_items(),
     )
 
@@ -176,16 +176,16 @@ async def get_leases_with_renewal_accepted(
 async def get_lease(
     lease_id: str,
     session: AsyncSession = Depends(get_db),
-    request_user: User = Depends(authenticate_user),
+    user: User = Depends(authenticate_user),
 ) -> Union[LeaseOutputSchema, LeaseBasicOutputSchema]:
     lease = await get_single_lease(session, lease_id)
 
     # owners or tenants can view full data
-    if request_user.id in (lease.owner_id, lease.tenant_id):
+    if user.id in (lease.owner_id, lease.tenant_id):
         return lease
 
     # staff/admin already allowed by decorator
-    if request_user.role.name in ("admin", "staff"):
+    if user.role.name in ("admin", "staff"):
         return lease
 
     raise AuthorizationException("You don't have permissions to perform this action.")
@@ -221,12 +221,12 @@ async def update_lease(
 async def accept_lease_renewal(
     lease_id: str,
     session: AsyncSession = Depends(get_db),
-    request_user: User = Depends(authenticate_user),
+    user: User = Depends(authenticate_user),
 ) -> JSONResponse:
     lease = await get_single_lease(session, lease_id)
 
-    if request_user.role.name in ("admin", "staff") or \
-       request_user.id in (lease.owner_id, lease.tenant_id):
+    if user.role.name in ("admin", "staff") or \
+       user.id in (lease.owner_id, lease.tenant_id):
 
         await accept_single_lease_renewal(session, lease_id)
         return JSONResponse(
@@ -249,12 +249,12 @@ async def accept_lease_renewal(
 async def discard_lease_renewal(
     lease_id: str,
     session: AsyncSession = Depends(get_db),
-    request_user: User = Depends(authenticate_user),
+    ser: User = Depends(authenticate_user),
 ) -> JSONResponse:
     lease = await get_single_lease(session, lease_id)
 
-    if request_user.role.name in ("admin", "staff") or \
-       request_user.id in (lease.owner_id, lease.tenant_id):
+    if user.role.name in ("admin", "staff") or \
+       user.id in (lease.owner_id, lease.tenant_id):
 
         await discard_single_lease_renewal(session, lease_id)
         return JSONResponse(

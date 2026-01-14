@@ -122,12 +122,12 @@ async def get_user_owner_leases(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
-    request_user: User = Depends(authenticate_user),
+    user: User = Depends(authenticate_user),
 ) -> PagedResponseSchema[PropertyBasicOutputSchema]:
     return await get_all_properties(
         session,
         page_params,
-        owner_id=request_user.id,
+        owner_id=user.id,
         query_params=request.query_params.multi_items(),
     )
 
@@ -144,7 +144,7 @@ async def get_user_owner_leases(
 async def get_property(
     property_id: str,
     session: AsyncSession = Depends(get_db),
-    request_user: User = Depends(authenticate_user),
+    user: User = Depends(authenticate_user),
 ) -> Union[PropertyOutputSchema, PropertyBasicOutputSchema]:
 
     property = await get_single_property(session, property_id)

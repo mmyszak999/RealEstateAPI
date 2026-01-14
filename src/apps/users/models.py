@@ -44,7 +44,6 @@ class User(Base):
     tenant_leases = relationship(
         "Lease", back_populates="tenant", lazy="joined", foreign_keys="Lease.tenant_id"
     )
-    payments = relationship("Payment", back_populates="tenant", lazy="joined")
 
     role_id = Column(
         String(length=50),

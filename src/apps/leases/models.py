@@ -11,7 +11,6 @@ from src.apps.leases.enums import BillingPeriodEnum
 from src.core.utils.orm import default_lease_expiration_date, default_next_payment_date
 from src.core.utils.utils import generate_uuid
 from src.database.db_connection import Base
-from src.apps.payments.models import Payment
 
 
 class Lease(Base):
@@ -39,7 +38,6 @@ class Lease(Base):
         default=BillingPeriodEnum.MONTHLY,
     )
     next_payment_date = Column(Date, nullable=True, default=default_next_payment_date)
-    payment_bank_account = Column(String(length=75), nullable=False)
     tenant_id = Column(
         String(length=50),
         ForeignKey("user.id", ondelete="SET NULL", onupdate="cascade"),
@@ -62,4 +60,3 @@ class Lease(Base):
         ForeignKey("property.id", ondelete="SET NULL", onupdate="cascade"),
         nullable=True,
     )
-    payments = relationship("Payment", back_populates="lease", lazy="selectin")

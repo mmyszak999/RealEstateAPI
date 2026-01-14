@@ -14,8 +14,6 @@ from src.apps.leases.schemas import (
     LeaseOutputSchema,
     LeaseUpdateSchema,
 )
-from src.apps.payments.models import Payment
-from src.apps.payments.services import create_payment
 from src.apps.properties.enums import PropertyStatusEnum
 from src.apps.properties.models import Property
 from src.apps.users.models import User
@@ -263,7 +261,6 @@ async def base_manage_lease_renewals_and_expired_statuses(
             rent_amount=lease.rent_amount,
             initial_deposit_amount=lease.initial_deposit_amount,
             billing_period=lease.billing_period,
-            payment_bank_account=lease.payment_bank_account,
             owner_id=lease.owner_id,
             tenant_id=lease.tenant_id,
             property_id=lease.property_id,
@@ -337,8 +334,5 @@ async def manage_leases_with_incoming_payment_date(
     )
     leases_with_incoming_payments = await session.scalars(statement)
     leases_with_incoming_payments = leases_with_incoming_payments.unique().all()
-    [
-        await create_payment(session, lease, background_tasks)
-        for lease in leases_with_incoming_payments
-    ]
+    
     await session.commit()

@@ -8,7 +8,6 @@ from src.apps.companies.routers import company_router
 from src.apps.emails.routers import email_router
 from src.apps.jwt.routers import jwt_router
 from src.apps.leases.routers import lease_router
-from src.apps.payments.routers import payment_router, stripe_router
 from src.apps.properties.routers import property_router
 from src.apps.users.routers import user_router
 from src.core.exceptions import (
@@ -57,8 +56,6 @@ root_router.include_router(property_router)
 root_router.include_router(company_router)
 root_router.include_router(address_router)
 root_router.include_router(lease_router)
-root_router.include_router(payment_router)
-root_router.include_router(stripe_router)
 
 app.include_router(root_router)
 

@@ -179,11 +179,11 @@ async def activate_user(
 
 
 @user_router.patch("/{user_id}/role_add")
-@role_required("admin", "staff")
+@role_required("admin")
 async def update_user_role(
     user_id: str,
     role_schema: RoleBaseSchema,
     session: AsyncSession = Depends(get_db),
     user: User = Depends(authenticate_user)
 ):
-    return await set_user_role(session, user_id, role_schema.role)
+    return await set_user_role(session, user_id, role_schema.name)

@@ -24,7 +24,6 @@ class LeaseInputSchemaFactory(SchemaFactory):
         rent_amount: Decimal = None,
         initial_deposit_amount: Decimal = None,
         billing_period: BillingPeriodEnum = None,
-        payment_bank_account: str = None,
         owner_id: str = None,
         tenant_id: str = None,
         property_id: str = None,
@@ -52,7 +51,6 @@ class LeaseInputSchemaFactory(SchemaFactory):
             initial_deposit_amount=initial_deposit_amount
             or set_random_initial_deposit_amount(),
             billing_period=billing_period or set_random_billing_period(),
-            payment_bank_account=payment_bank_account or self.faker.iban(),
             owner_id=owner_id,
             tenant_id=tenant_id,
             property_id=property_id,
@@ -68,11 +66,9 @@ class LeaseUpdateSchemaFactory(SchemaFactory):
         rent_amount: Optional[Decimal] = None,
         initial_deposit_amount: Optional[Decimal] = None,
         lease_expiration_date: Optional[date] = None,
-        payment_bank_account: Optional[str] = None,
     ):
         return self.schema_class(
             rent_amount=rent_amount,
             initial_deposit_amount=initial_deposit_amount,
-            lease_expiration_date=lease_expiration_date,
-            payment_bank_account=payment_bank_account,
+            lease_expiration_date=lease_expiration_date
         )

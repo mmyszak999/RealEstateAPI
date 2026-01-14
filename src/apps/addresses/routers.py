@@ -40,6 +40,7 @@ address_router = APIRouter(prefix="/addresses", tags=["address"])
 async def post_address(
     address: AddressInputSchema,
     session: AsyncSession = Depends(get_db),
+    user: User = Depends(authenticate_user)
 ) -> AddressBasicOutputSchema:
     return await create_address(session, address)
 
@@ -57,6 +58,7 @@ async def get_addresses(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
+    user: User = Depends(authenticate_user)
 ) -> PagedResponseSchema[AddressBasicOutputSchema]:
     return await get_all_addresses(
         session,
@@ -79,11 +81,11 @@ async def get_addresses(
 async def get_address(
     address_id: str,
     session: AsyncSession = Depends(get_db),
-    request_user: User = Depends(authenticate_user),
+    user: User = Depends(authenticate_user),
 ) -> Union[AddressOutputSchema, AddressBasicOutputSchema]:
 
     # Admin/staff → full schema
-    if request_user.role and request_user.role.name in ("admin", "staff"):
+    if user.role and user.role.name in ("admin", "staff"):
         return await get_single_address(session, address_id)
 
     # Regular user → restricted schema
@@ -107,5 +109,6 @@ async def update_address(
     address_id: str,
     address_input: AddressUpdateSchema,
     session: AsyncSession = Depends(get_db),
+    user: User = Depends(authenticate_user)
 ) -> AddressBasicOutputSchema:
     return await update_single_address(session, address_input, address_id)

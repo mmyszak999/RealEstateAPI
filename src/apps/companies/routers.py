@@ -59,6 +59,7 @@ async def get_companies(
     request: Request,
     session: AsyncSession = Depends(get_db),
     page_params: PageParams = Depends(),
+    user: User = Depends(authenticate_user),
 ) -> PagedResponseSchema[CompanyBasicOutputSchema]:
     return await get_all_companies(
         session, page_params, query_params=request.query_params.multi_items()
@@ -79,12 +80,12 @@ async def get_companies(
 async def get_company(
     company_id: str,
     session: AsyncSession = Depends(get_db),
-    request_user: User = Depends(authenticate_user),
+    user: User = Depends(authenticate_user),
 ) -> Union[CompanyOutputSchema, CompanyBasicOutputSchema]:
-    if request_user.role and request_user.role.name in ("admin", "staff"):
+    if user.role and user.role.name in ("admin", "staff"):
         return await get_single_company(session, company_id)
 
-    if request_user.company_id == company_id:
+    if user.company_id == company_id:
         return await get_single_company(session, company_id)
 
     # fallback: restricted view
@@ -106,6 +107,7 @@ async def update_company(
     company_id: str,
     company_input: CompanyUpdateSchema,
     session: AsyncSession = Depends(get_db),
+    user: User = Depends(authenticate_user)
 ) -> CompanyOutputSchema:
     return await update_single_company(session, company_input, company_id)
 
@@ -122,6 +124,7 @@ async def add_user_to_company(
     company_id: str,
     user_company_input: UserIdSchema,
     session: AsyncSession = Depends(get_db),
+    user: User = Depends(authenticate_user)
 ) -> JSONResponse:
     await add_single_user_to_company(session, user_company_input, company_id)
     return JSONResponse(
@@ -142,6 +145,7 @@ async def remove_user_from_company(
     company_id: str,
     user_company_input: UserIdSchema,
     session: AsyncSession = Depends(get_db),
+    user: User = Depends(authenticate_user)
 ) -> JSONResponse:
     await remove_single_user_from_company(session, user_company_input, company_id)
     return JSONResponse(
